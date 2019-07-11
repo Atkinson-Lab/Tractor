@@ -1,4 +1,4 @@
-# FixTractSwitches
+# The Tractor pipeline
 
 A pipeline for improving the long-range phasing of genotype files informed by local ancestry deconvolution, and extracting the separate ancestral segments from admixed individuals. The pipeline is currently designed assuming RFmix_v2 formatted output and VCF format genotype input.
 

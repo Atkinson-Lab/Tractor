@@ -31,24 +31,24 @@ def parse_args():
 
 
 args = parse_args()
-mspfile = open(args.msp, + '.msp.tsv', 'r')
+mspfile = open(args.msp + '.msp.tsv', 'r')
 genofile = open(args.vcf + '.vcf', 'r')
-out0 = open(args.genofile + '.anc0.vcf', 'w') #output for the extracted VCF anc 0
-out1 = open(args.genofile + '.anc1.vcf', 'w') #output for the extracted VCF anc 1
+out0 = open(args.vcf + '.anc0.vcf', 'w') #output for the extracted VCF anc 0
+out1 = open(args.vcf + '.anc1.vcf', 'w') #output for the extracted VCF anc 1
 
 
 # In[108]:
 
 
 #save the first 6 lines, the VCF header
-head = genofile.readlines()[:6]
+#head = genofile.readlines()[:6]
 
 
 # In[109]:
 
 
-out0.write('\n'.strip().join(head))
-out1.write('\n'.strip().join(head))
+#out0.write('\n'.strip().join(head))
+#out1.write('\n'.strip().join(head))
 genofile = open(args.vcf + '.vcf', 'r') #have to re-open the VCF since this header logging closed it
 
 
@@ -64,9 +64,11 @@ chromosome = ("", 0, 0)
 
 for line in genofile:
     if line.startswith("#"):
+        out0.write(line) 
+        out1.write(line)
         continue
-    if not line:
-        break #stop when get to the end of the file
+    #if not line:
+        #break #stop when get to the end of the file
     CHROM, POS, ID, REF, ALT, QUAL, FILTER, INFO, FORMAT, genos = line.strip().split('\t', 9)
     genos = genos.replace('|', '\t').split('\t') #split each strand geno call apart from each other
     #genos = genos.split('\t').split('|')

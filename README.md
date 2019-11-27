@@ -26,3 +26,5 @@ Please cite out publication:
 
 Other usage notes:
 A thorough description of Tractor and its potential uses can be found in our paper, listed above. We additionally have developed a GWAS application, implemented in joint analysis format in Hail. This is distributed in the form of a Jupyter notebook, the file XX.
+
+Important: The success of Tractor relies on good local ancestry calls. Please ensure your LAI performance is highly accurate. Additionally, ends of chromosomes are hard to infer local ancestry accurately, so you may wish to trim the ends or treat chromosome ends with caution.

@@ -21,8 +21,8 @@ Example usage:
 ```python ExtractTracts.py --msp MSPFILE --vcf VCF```
 
 
-Please cite out publication:
-[insert RFmix pub]
+Please cite our publication:
+[insert pub]
 
 Other usage notes:
 A thorough description of Tractor and its potential uses can be found in our paper, listed above. We additionally have developed a GWAS application, implemented in joint analysis format in Hail. This is distributed in the form of a Jupyter notebook, the file XX.

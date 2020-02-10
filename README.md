@@ -21,10 +21,15 @@ Example usage:
 ```python ExtractTracts.py --msp MSPFILE --vcf VCF```
 
 
+We additionally have developed a GWAS application, implementing the joint analysis model in the scalable cloud-compatible framework Hail (https://hail.is/). An example implementation of Tractor joint analysis GWAS in Hail is distributed in the form of a well-annotated Hail/python Jupyter notebook or python code, the files Tractor-Example-GWAS.py. This implements the model
+Y ~ b_0 + b_1 X_1 + b_2 X_2 + b_k X_k
+where X1 is the number of haplotypes of the index ancestry present at that locus for each individual, X2 is the number of copies of the risk allele coming from the first ancestry, X3 is copies coming from the second ancestry, and X4 to Xk  are other covariates such as PCs or another metric of overall admixture fraction. This model produces ancestry-specific effect size estimates and p values, which can be extremely useful in post-GWAS efforts. A thorough description of Tractor and this GWAS model can be found in our paper.
+
+For the meta-analysis style of analysis, the partial VCF files containing deconvolved pieces of ancestry tracts from component ancestries can be readily run through the user's prefered GWAS pipeline, including plink, and the results subsequently meta-analysed.
+
+
 Please cite our publication:
 [insert pub]
 
-Other usage notes:
-A thorough description of Tractor and its potential uses can be found in our paper, listed above. We additionally have developed a GWAS application, implemented in joint analysis format in Hail. This is distributed in the form of a Jupyter notebook, the file XX.
 
-Important: The success of Tractor relies on good local ancestry calls. Please ensure your LAI performance is highly accurate. Additionally, at the ends of chromosomes it is hard to infer local ancestry accurately, so you may wish to trim the ends or treat chromosome ends with caution.
+Important: The success of Tractor relies on good local ancestry calls. Please ensure your LAI performance is highly accurate before running a Tractor GWAS. We recommend admixture simulations to test accuracy for your demographic use case, which can be implemented with a program such as https://github.com/williamslab/admix-simu.  Additionally, at the ends of chromosomes it is hard to infer local ancestry accurately, so you may wish to trim the ends or treat chromosome ends with caution.

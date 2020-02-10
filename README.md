@@ -1,6 +1,6 @@
 # The Tractor pipeline
 
-A pipeline for improving the long-range phasing of genotype files informed by local ancestry deconvolution, and extracting the separate ancestral segments from admixed individuals. The pipeline is currently designed assuming RFmix_v2 formatted output and phased VCF format genotype input.
+### A pipeline for improving the long-range phasing of genotype files informed by local ancestry deconvolution, and extracting the separate ancestral segments from admixed individuals. The pipeline is currently designed assuming RFmix_v2 formatted output and phased VCF format genotype input.
 
 The pipeline consists of 3 scripts, the first two being optional:
 1) Detect and unkink strand flips using RFmix .msp.tsv output. A strand flip is defined as a switch within a 1 cM window to opposite strands of at least one component ancestries (currently implemented in a 2-way admixed setting) conditioned on heterozygous ancestral dosage.
@@ -21,6 +21,7 @@ Example usage:
 ```python ExtractTracts.py --msp MSPFILE --vcf VCF```
 
 
+### Tractor GWAS 
 We additionally have developed a GWAS application, implementing the joint analysis model in the scalable cloud-compatible framework Hail (https://hail.is/). An example implementation of Tractor joint analysis GWAS in Hail is distributed in the form of a well-annotated Hail/python Jupyter notebook or python code, the files Tractor-Example-GWAS.py. This implements the model
 Y ~ b_0 + b_1 X_1 + b_2 X_2 + b_k X_k
 where X1 is the number of haplotypes of the index ancestry present at that locus for each individual, X2 is the number of copies of the risk allele coming from the first ancestry, X3 is copies coming from the second ancestry, and X4 to Xk  are other covariates such as PCs or another metric of overall admixture fraction. This model produces ancestry-specific effect size estimates and p values, which can be extremely useful in post-GWAS efforts. A thorough description of Tractor and this GWAS model can be found in our paper.

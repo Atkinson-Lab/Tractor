@@ -26,7 +26,8 @@ We have now also added a version of the dosage extracting script that works on 3
 NOTE: Tractor expects all VCF files to have had their INFO and FORMAT annotations stripped prior to running. This can be accomplished with bcftools on bgzipped and tabix indexed vcfs: 
 ```bgzip file.vcf
 tabix file.vcf.gz
-bcftools annotate -x INFO,^FORMAT/GT file.vcf.gz > stripped_file.vcf```
+bcftools annotate -x INFO,^FORMAT/GT file.vcf.gz > stripped_file.vcf
+```
 
 
 

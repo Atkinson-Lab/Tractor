@@ -21,6 +21,15 @@ Example usage:
 ```python ExtractTracts.py --msp MSPFILE --vcf VCF```
 
 
+We have now also added a version of the dosage extracting script that works on 3-way admixed samples. Usage is the same as before, calling ExtractTracts-3way.py.
+
+NOTE: Tractor expects all VCF files to have had their INFO and FORMAT annotations stripped prior to running. This can be accomplished with bcftools on bgzipped and tabix indexed vcfs: 
+bgzip file.vcf
+tabix file.vcf.gz
+bcftools annotate -x INFO,^FORMAT/GT file.vcf.gz > stripped_file.vcf
+
+
+
 ### Tractor GWAS 
 We additionally have developed a GWAS application, implementing the joint analysis model in the scalable cloud-compatible framework Hail (https://hail.is/). An example implementation of Tractor joint analysis GWAS in Hail is distributed in the form of a well-annotated Hail/python Jupyter notebook or python code, the files Tractor-Example-GWAS.py. This implements the model
 Y ~ b_0 + b_1 X_1 + b_2 X_2 + b_k X_k

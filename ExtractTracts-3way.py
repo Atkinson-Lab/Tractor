@@ -32,7 +32,9 @@ out2 = open(args.vcf + '.anc2.vcf', 'w') #output for the extracted VCF anc 2
 outdos0 = open(args.vcf + '.anc0.dosage.txt', 'w') #output dosages for each ancestry into separate files
 outdos1 = open(args.vcf + '.anc1.dosage.txt', 'w') #output dosages for each ancestry into separate files
 outdos2 = open(args.vcf + '.anc2.dosage.txt', 'w') #output dosages for each ancestry into separate files
-
+outancdos0 = open(args.vcf + '.anc0.hapcount.txt', 'w')  # output number of haplotype for each ancestry into separate files
+outancdos1 = open(args.vcf + '.anc1.hapcount.txt', 'w')  # output number of haplotype for each ancestry into separate files
+outancdos2 = open(args.vcf + '.anc2.hapcount.txt', 'w')  # output number of haplotype for each ancestry into separate files
 
 #save the VCF header
 head = ""
@@ -65,6 +67,9 @@ for line in genofile:
 	outputdos0 = '\t'.join([CHROM, POS, ID, REF, ALT])
 	outputdos1 = '\t'.join([CHROM, POS, ID, REF, ALT])
 	outputdos2 = '\t'.join([CHROM, POS, ID, REF, ALT])
+	outputancdos0 = '\t'.join([CHROM, POS, ID, REF, ALT])
+	outputancdos1 = '\t'.join([CHROM, POS, ID, REF, ALT])
+	outputancdos2 = '\t'.join([CHROM, POS, ID, REF, ALT])
 	POS = int(POS)
 
 	#optimized for quicker runtime - only move to next line when out of the current msp window
@@ -87,43 +92,51 @@ for line in genofile:
 		count0 = 0
 		count1 = 0
 		count2 = 0
+		count_anc0: int = 0
+		count_anc1: int = 0
 
 		#if the anc call is 0, keep, replace 1 or other calls with missing data
 		if callA == '0':
 			genoA0 = genoA
 			genoA1 = "."
 			genoA2 = "."
+			count_anc0 = count_anc0 + 1  # tally up the ancestral haplotypes present at each site
 			if genoA0 == '1':
 				count0 = count0 + 1
 		elif callA == '1':
 			genoA0 = "."
 			genoA1 = genoA   #if the anc call is 1, keep, otherwise make into missing data
 			genoA2 = "."
+			count_anc1 = count_anc1 + 1
 			if genoA1 == '1':
 				count1 = count1 + 1
 		elif callA == '2': #and also get the dosage and pieces for anc call 2
 			genoA0 = "."
 			genoA1 = "."
 			genoA2 = genoA
+			count_anc2 = count_anc2 + 1
 			if genoA2 == '1':
 				count2 = count2 + 1
 
-		if callB.startswith('0'): #format the call B with starts with 0,1,2 in case there are INFO annotations present
+		if callB == '0':
 			genoB0 = genoB
 			genoB1 = "."
 			genoB2 = "."
+			count_anc0 = count_anc0 + 1
 			if genoB0 == '1':
 				count0 = count0 + 1
 		elif callB == '1':
 			genoB0 = "."
 			genoB1 = genoB
 			genoB2 = "."
+			count_anc1 = count_anc1 + 1
 			if genoB1 == '1':
 				count1 = count1 + 1
 		elif callB == '2':
 			genoB0 = "."
 			genoB1 = "."
 			genoB2 = genoB
+			count_anc2 = count_anc2 + 1
 			if genoB2 == '1':
 				count2 = count2 + 1
 
@@ -133,21 +146,34 @@ for line in genofile:
 		outputdos0 += '\t' + str(count0)
 		outputdos1 += '\t' + str(count1)
 		outputdos2 += '\t' + str(count2)
+		outputancdos0 += '\t' + str(count_anc0)
+		outputancdos1 += '\t' + str(count_anc1)
+		outputancdos2 += '\t' + str(count_anc2)
+
 	output0 += '\n'
 	output1 += '\n'
 	output2 += '\n'
 	outputdos0 += '\n'
 	outputdos1 += '\n'
 	outputdos2 += '\n'
+	outputancdos0 += '\n'
+	outputancdos1 += '\n'
+	outputancdos2 += '\n'
 	out0.write(output0)
 	out1.write(output1)
 	out2.write(output2)
 	outdos0.write(outputdos0)
 	outdos1.write(outputdos1)
 	outdos2.write(outputdos2)
+	outancdos0.write(outputancdos0)
+	outancdos1.write(outputancdos1)
+	outancdos2.write(outputancdos2)
 out0.close()
 out1.close()
 out2.close()
 outdos0.close()
 outdos1.close()
 outdos2.close()
+outancdos0.close()
+outancdos1.close()
+outancdos2.close()

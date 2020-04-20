@@ -23,7 +23,7 @@ Example usage:
 
 We have now also added a version of the dosage extracting script that works on 3-way admixed samples. Usage is the same as before, calling ExtractTracts-3way.py.
 
-NOTE: Tractor expects all VCF files to have had their INFO and FORMAT annotations stripped prior to running. This can be accomplished with bcftools on bgzipped and tabix indexed vcfs: 
+NOTE: Tractor expects all VCF files to be phased (i.e. genotypes contain pipes rather than slashes), and have had their INFO and FORMAT annotations stripped prior to running. This can be accomplished with bcftools on bgzipped and tabix indexed vcfs: 
 ```
 bgzip file.vcf
 tabix file.vcf.gz

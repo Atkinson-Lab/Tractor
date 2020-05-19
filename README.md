@@ -40,8 +40,7 @@ where X1 is the number of haplotypes of the index ancestry present at that locus
 For the meta-analysis style of analysis, the partial VCF files containing deconvolved pieces of ancestry tracts from component ancestries can be readily run through the user's prefered GWAS pipeline, including plink, and the results subsequently meta-analysed.
 
 
-Please cite our publication:
-[insert pub]
+Please cite our publication: https://www.biorxiv.org/content/10.1101/2020.05.17.100727v1
 
 
 Important: The success of Tractor relies on good local ancestry calls. Please ensure your LAI performance is highly accurate before running a Tractor GWAS. We recommend admixture simulations to test accuracy for your demographic use case, which can be implemented with a program such as https://github.com/williamslab/admix-simu.  Additionally, at the ends of chromosomes it is hard to infer local ancestry accurately, so you may wish to trim the ends or treat chromosome ends with caution.

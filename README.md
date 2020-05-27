@@ -2,7 +2,7 @@
 
 Thanks for your interest in Tractor!
 
-Please check out the Wiki page of this repo for more details about each step and descriptions of implementation.
+Please check out the Wiki page of this repo (https://github.com/eatkinson/Tractor/wiki) for more details about each step and descriptions of implementation.
 
 The method and implementation is more fully described in our preprint, "Tractor: A framework allowing for improved inclusion of admixed individuals in large-scale association studies", which is on bioRxiv here: https://www.biorxiv.org/content/10.1101/2020.05.17.100727v1.
 

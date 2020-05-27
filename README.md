@@ -1,46 +1,11 @@
-# The Tractor pipeline
+## The Tractor pipeline
 
-### A pipeline for improving the long-range phasing of genotype files informed by local ancestry deconvolution, and extracting the separate ancestral segments from admixed individuals. The pipeline is currently designed assuming RFmix_v2 formatted output and phased VCF format genotype input.
+Thanks for your interest in Tractor!
 
-The pipeline consists of 3 scripts, the first two being optional:
-1) Detect and unkink strand flips using RFmix .msp.tsv output. A strand flip is defined as a switch within a 1 cM window to opposite strands of at least one component ancestries (currently implemented in a 2-way admixed setting) conditioned on heterozygous ancestral dosage.
-This step is implememted with the script *UnkinkMSPfile.py*, which tracks switch locations and unkinks your ancestry call RFmix output file. This recovers long range tracts which are disrupted by statistical phasing.
+The method and implementation is more fully described in our preprint, "Tractor: A framework allowing for improved inclusion of admixed individuals in large-scale association studies", which is on bioRxiv here.
 
-Example usage: 
-```python UnkinkMSPfile.py --msp FILENAME_STEM```
+In this repo, we provide scripts comprising the full Tractor pipeline for (1) recovering long-range haplotypes as informed by local ancestry deconvolution, (2) extracting ancestral segments from admixed individuals, (3) calculating ancestral minor allele dosages and (4) running our local ancestry aware GWAS model. The pipeline is currently designed assuming RFmix_v2 and phased VCF format genotype input.
 
-2) Unkink the phased genotype file (VCF format) that was fed into RFmix. This improves long-range phasing accuracy in a manner informed by the local ancestry tract calls. This step is implememted with the script *UnkinkGenofile.py* and expects as input the phased VCF file that was fed into RFmix and the 'switches' file generated with step 1, which is used to determine the positions that need to be flipped in the VCF file. 
+The pipeline consists of separate scripts for maximum flexibility of utility. These scripts can be run in sequence to do all the steps or, if long-range tracts will not impact the goals of the analysis, the user can skip right to ancestry dosage calculation and running our GWAS model.
 
-Example usage: 
-```python UnkinkGenofile.py --switches SWITCHES_FILE --genofile INPUT_VCF```
-
-3) Extract the tracts that relate to each component ancestry into their own VCFs. These ancestry-deconvoluted files can then be analyzed alongside larger cohorts of the ancestral composition they pertain to. For example, an admixed African American individual could be run through the pipeline and separated into "European" and "African" chromosomal fragments to be considered alongside European and African cohort collections rather than being excluded from study due to population structure concerns.
-This step is implemented with the script *ExtractTracts.py* and expects as input the VCF and RFmix msp files. You can input the unkinked files from the previous step if you chose to unkink. The script *ExtractTracts-3way.py* handles three-way admixed population scenarios.
-
-Example usage: 
-```python ExtractTracts.py --msp MSPFILE --vcf VCF```
-
-
-We have now also added a version of the dosage extracting script that works on 3-way admixed samples. Usage is the same as before, calling ExtractTracts-3way.py.
-
-NOTE: Tractor expects all VCF files to be phased (i.e. genotypes contain pipes rather than slashes), and have had their INFO and FORMAT annotations stripped prior to running. This can be accomplished with bcftools on bgzipped and tabix indexed vcfs: 
-```
-bgzip file.vcf
-tabix file.vcf.gz
-bcftools annotate -x INFO,^FORMAT/GT file.vcf.gz > stripped_file.vcf
-```
-
-
-
-### Tractor GWAS 
-We additionally have developed a GWAS application, implementing the joint analysis model in the scalable cloud-compatible framework Hail (https://hail.is/). An example implementation of Tractor joint analysis GWAS in Hail is distributed in the form of a well-annotated Hail/python Jupyter notebook or python code, the files Tractor-Example-GWAS.py. This implements the model
-Y ~ b_0 + b_1 X_1 + b_2 X_2 + b_k X_k
-where X1 is the number of haplotypes of the index ancestry present at that locus for each individual, X2 is the number of copies of the risk allele coming from the first ancestry, X3 is copies coming from the second ancestry, and X4 to Xk  are other covariates such as PCs or another metric of overall admixture fraction. This model produces ancestry-specific effect size estimates and p values, which can be extremely useful in post-GWAS efforts. A thorough description of Tractor and this GWAS model can be found in our paper.
-
-For the meta-analysis style of analysis, the partial VCF files containing deconvolved pieces of ancestry tracts from component ancestries can be readily run through the user's prefered GWAS pipeline, including plink, and the results subsequently meta-analysed.
-
-
-Please cite our publication: https://www.biorxiv.org/content/10.1101/2020.05.17.100727v1
-
-
-Important: The success of Tractor relies on good local ancestry calls. Please ensure your LAI performance is highly accurate before running a Tractor GWAS. We recommend admixture simulations to test accuracy for your demographic use case, which can be implemented with a program such as https://github.com/williamslab/admix-simu.  Additionally, at the ends of chromosomes it is hard to infer local ancestry accurately, so you may wish to trim the ends or treat chromosome ends with caution.
+Please check out the Wiki page of this repo for details about each step.

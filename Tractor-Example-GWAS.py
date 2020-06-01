@@ -51,19 +51,19 @@ mt = anc0dos.annotate_entries(anc1dos = anc1dos[anc0dos.locus, anc0dos.col_id], 
 #mt = anc0dos.annotate_entries(anc1dos = anc1dos[anc0dos.locus, anc0dos.col_id], anc2dos = anc2dos[anc0dos.locus, anc0dos.col_id], hapcounts0 = hapcounts0[mt.locus, mt.col_id], hapcounts1 = hapcounts1[mt.locus, mt.col_id]))
 
 ## load in the phenotype phenotype and covariate file. The IDs should be consistent with those in the header of the Tractor dosage file
-phenos = hl.import_table('gs://ukb-diverse-pops/AdmixedAfrEur/NHLP/nhlp_nov19_pheno_and_covs.txt').key_by('IID')
+phenos = hl.import_table('gs://.../Dataset_pheno_and_covs.txt').key_by('IID')
 
 #annotate the mt with the phenotypes
 mt = mt.annotate_cols(phenos = phenos[mt.col_id])
 
 #write out the newly annotated matrix table. Will run a lot faster if we load this in again after annotating things in due to Hail's lazy processing style.
-mt.write('gs://ukb-diverse-pops/AdmixedAfrEur/DosageFiles/UKBB_AfEur_QCed_lipids_dosages.mt')
+mt.write('gs://.../Dataset.phenos_dosages.mt')
 
 
 # # Run Tractor ancestry-aware linear regression
 
 #read in the filtered and annotated mt file again to go faster
-mt = hl.read_matrix_table('gs://ukb-diverse-pops/AdmixedAfrEur/DosageFiles/UKBB_AfEur_QCed_lipids_dosages.mt')
+mt = hl.read_matrix_table('gs://.../Dataset.phenos_dosages.mt')
 
 #Run GWAS on a single phenotype, here running on TC, Total Cholesterol, using the Tractor haplotype counts and dosages as described in the manuscript
 #along with relevant covariates, here we show the covariates being sex, age, blood dilution level, and global ancestry fractions obtained from previous ADMIXTURE runs

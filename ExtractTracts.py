@@ -41,7 +41,7 @@ for line in genofile:
         out1.write(line)
         continue
     if not line:
-    break #stop when get to the end of the file
+      break #stop when get to the end of the file
     CHROM, POS, ID, REF, ALT, QUAL, FILTER, INFO, FORMAT, genos = line.strip().split('\t', 9)
     genos = genos.replace('|', '\t').split('\t')  # split each strand geno call apart from each other
     output0 = '\t'.join([CHROM, POS, ID, REF, ALT, QUAL, FILTER, INFO, FORMAT])
@@ -72,8 +72,8 @@ for line in genofile:
         callB = str(calls[2 * i + 1])
         count0 = 0
         count1 = 0
-        count_anc0: int = 0
-        count_anc1: int = 0
+        count_anc0 = 0
+        count_anc1 = 0
 
         # if the anc call is 0, keep, replace 1 or other calls with missing data
         if callA == '0':

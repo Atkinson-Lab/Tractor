@@ -7,7 +7,7 @@ import argparse
 
 """
 USAGE:
-ExtractTracts-Flags-multi.py --msp  <an ancestral calls file produced by RFmix version 2, suffixed with .msp.tsv>
+ExtractTracts.py --msp  <an ancestral calls file produced by RFmix version 2, suffixed with .msp.tsv>
                              --vcf <VCF file suffixed with .vcf>
 """
 

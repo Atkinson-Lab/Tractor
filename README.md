@@ -4,7 +4,7 @@ Thanks for your interest in Tractor!
 
 Please check out the Wiki page of this repo (https://github.com/eatkinson/Tractor/wiki) for more details about each step and descriptions of implementation.
 
-The method and utility of Tractor is more fully described in our preprint, "Tractor: A framework allowing for improved inclusion of admixed individuals in large-scale association studies", which is on bioRxiv here: https://www.biorxiv.org/content/10.1101/2020.05.17.100727v1.
+The methodology and utility of Tractor is more fully described in our manuscript, "Tractor uses local ancestry to enable the inclusion of admixed individuals in GWAS and to boost power", which is was published in Nature Genetics here: https://www.nature.com/articles/s41588-020-00766-y. We ask that you cite this publication for work utilizing the Tractor software.
 
 
 In this repo, we provide scripts comprising the full Tractor pipeline for (1) recovering long-range haplotypes as informed by local ancestry deconvolution, (2) extracting ancestral segments and calculating ancestral minor allele dosages, and (3) running our local ancestry aware GWAS model.

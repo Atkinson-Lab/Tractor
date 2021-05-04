@@ -3,9 +3,11 @@ __author__ = 'egatkinson'
 
 
 import argparse
+import gzip
+import contextlib 
 
 USAGE = """
-ExtractTracts-Flags-multi.py --msp  <an ancestral calls file produced by RFmix version 2, suffixed with .msp.tsv>
+ExtractTracts.py --msp  <an ancestral calls file produced by RFmix version 2, suffixed with .msp.tsv>
                              --vcf <VCF file suffixed with .vcf>
 """
 
@@ -16,14 +18,58 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--msp', help='path stem to RFmix msp file, not including .msp.tsv', required=True)
     parser.add_argument('--vcf', help='path stem to RFmix input VCF with phased genotypes, not including .vcf suffix', required=True)
+    parser.add_argument('--zip', help='Input VCF is gzipped', action='store_true')
+    parser.add_argument('--num-anc', help='Number of continental ancestries in admixed populations', default=2)
     args = parser.parse_args()
     return(args)    
 
 
-args = parse_args()
+def extract_tracts(msp, vcf, zip, num_anc):
+    args = parse_args()
+    vcf = args.vcf
+    mspfile = f'{args.msp}.msp.tsv'
+    genofile = f'{vcf}.vcf.gz' if args.zip else f'{vcf}.vcf'
+    num_anc = args.num_anc
+
+    output_files = {}
+
+    for i in range(num_anc):
+        output_files[f"out{i}"] = f'{vcf}.anc{i}.vcf' #output extracted VCF for each ancestry into separate files
+        output_files[f"outdos{i}"] = f'{vcf}.anc{i}.dosage.txt' # output dosages for each ancestry into separate files
+        output_files[f"outancdos{i}"] = f'{vcf}.anc{i}.hapcount.txt'# output number of haplotype for each ancestry into separate files
+
+    with open(mspfile) as mspfile, \
+        gzip.open(genofile, 'rt') if args.zip else open(genofile) as genofile, \
+        contextlib.ExitStack() as stack:
+            files = {fname:stack.enter_context(open(output_file, 'w')) for fname, output_file in output_files.items()}
+            outputs_strs = {}
+            lines = genofile.readlines()
+            header_list = [line for line in lines if line.startswith('#')]
+            header = ''.join(header_list)
+
+            for i in range(num_anc): #Write header into each output vcf
+                files[f"out{i}"].write(header)
+
+            # THE ABOVE WORKS - WORKING ON PARSING VCF HEADER LINE OUT ELOQUENTLY
+            chromosome = ("", 0, 0) #initialize documenting the current window to check
+            calls = [line.strip().split('\t', 9) for line in lines if not line.startswith('#')]
+
+            # Call format is ['chrom', 'pos', 'id', 'ref', 'alt', 'qual', 'filter', 'info', 'format', 'genos']
+            for call in calls:
+                vcf_head = '\t'.join(call[:9])
+                dos_anc_head = '\t'.join(call(:5)
+                genos = call[9].replace('|', '\t').split('\t') # split each strand geno call apart from each other
+                pos = int(call[1]) 
+
+
+
+                
+        
+
+
 mspfile = open(args.msp + '.msp.tsv', 'r')
-genofile = open(args.vcf + '.vcf', 'r')
-out0 = open(args.vcf + '.anc0.vcf', 'w') #output for the extracted VCF anc 0
+genofile = open(vcf + '.vcf', 'r')
+out0 = open(vcf + '.anc0.vcf', 'w') #output for the extracted VCF anc 0
 out1 = open(args.vcf + '.anc1.vcf', 'w') #output for the extracted VCF anc 1
 out2 = open(args.vcf + '.anc2.vcf', 'w') #output for the extracted VCF anc 2
 outdos0 = open(args.vcf + '.anc0.dosage.txt', 'w') #output dosages for each ancestry into separate files
@@ -35,7 +81,7 @@ outancdos2 = open(args.vcf + '.anc2.hapcount.txt', 'w')  # output number of hapl
 
 #save the VCF header
 head = ""
-for line in genofile:
+line in genofile:
     if line.startswith("#"):
         head = head + line
     else:

@@ -15,7 +15,17 @@ ExtractTracts.py --msp  <an ancestral calls file produced by RFmix version 2, su
 # output will be returned in the same location as input VCF file with same naming convention
 
 
-def extract_tracts(msp, vcf_prefix, zipped, num_ancs):
+def extract_tracts(msp: str, vcf_prefix: str, zipped: bool, num_ancs: int = 3):
+    """
+    Extract ancestry segments from reference populations in admixed samples.
+
+    Parse phased VCF into N ancestry-specific VCFs, dosage count files, and haplotype count files using a msp file sample ancestry look up.
+
+    :param msp: Prefix to msp file.
+    :param vcf_prefix: Prefix to VCF file.
+    :param zipped: Whether of not the VCF file is gzipped.
+    :param num_ancs: The number of ancestries within the msp file
+    """
     mspfile = f"{msp}.msp.tsv"
     vcf = f"{vcf_prefix}.vcf.gz" if zipped else f"{vcf_prefix}.vcf"
     output_files = {}

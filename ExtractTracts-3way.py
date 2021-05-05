@@ -46,6 +46,7 @@ def extract_tracts(msp, vcf_prefix, zipped, num_ancs):
                 # Entry format is ['chrom', 'pos', 'id', 'ref', 'alt', 'qual', 'filter', 'info', 'format', 'genotypes']
                 row = line.strip().split('\t', 9)
 
+                #print(row)
                 #Grab fields needed for each file output
                 vcf_out = '\t'.join(row[:9])
                 dos_anc_out = '\t'.join(row[:5])
@@ -75,16 +76,16 @@ def extract_tracts(msp, vcf_prefix, zipped, num_ancs):
                     calls = ancs_entry[6].split('\t')
                     window = (ancs_entry[0], int(ancs_entry[1]), int(ancs_entry[2]))
 
-                for i in range(len(genos)): #index by the number of individuals in the VCF file, should be the same number in the calls file
-                    geno = genos[i].split(':')[0].split('|')
+                for i, geno in enumerate(genos): #index by the number of individuals in the VCF file, should be the same number in the calls file
+                    geno = geno.split(':')[0].split('|')
                     geno_a = str(geno[0])
                     geno_b = str(geno[1])
-                    call_a = str(calls[i])
-                    call_b = str(calls[i + 1])
+                    call_a = str(calls[2*i])
+                    call_b = str(calls[2*i + 1])
                     counts = {anc : 0 for anc in range(num_ancs)}
                     anc_counts = {anc : 0 for anc in range(num_ancs)}
-
                     for j in range(num_ancs):
+                        pop_genos[j]=''
                         if call_a == str(j): # j may need to be converted to string
                             pop_genos[j] += geno_a
                             anc_counts[j] += 1
@@ -113,6 +114,7 @@ def extract_tracts(msp, vcf_prefix, zipped, num_ancs):
                     files[f"out{j}"].write(output_lines[f"output{j}"])
                     files[f"outdos{j}"].write(output_lines[f"outputdos{j}"])
                     files[f"outancdos{j}"].write(output_lines[f"outputancdos{j}"])
+
 
 
 

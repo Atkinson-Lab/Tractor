@@ -30,20 +30,13 @@ def extract_tracts(msp: str, vcf_prefix: str, zipped: bool, num_ancs: int = 3):
     vcf = f"{vcf_prefix}.vcf.gz" if zipped else f"{vcf_prefix}.vcf"
     output_files = {}
 
+    # Output files: vcf, dosage, haplotype count per passed ancestry
     for i in range(num_ancs):
-        output_files[
-            f"out{i}"
-        ] = f"{vcf_prefix}.anc{i}.vcf"  # output extracted VCF for each ancestry into separate files
-        output_files[
-            f"outdos{i}"
-        ] = f"{vcf_prefix}.anc{i}.dosage.txt"  # output dosages for each ancestry into separate files
-        output_files[
-            f"outancdos{i}"
-        ] = f"{vcf_prefix}.anc{i}.hapcount.txt"  # output number of haplotype for each ancestry into separate files
+        output_files[f"out{i}"] = f"{vcf_prefix}.anc{i}.vcf"
+        output_files[f"outdos{i}"] = f"{vcf_prefix}.anc{i}.dosage.txt"
+        output_files[f"outancdos{i}"] = f"{vcf_prefix}.anc{i}.hapcount.txt"
 
-    with open(mspfile) as mspfile, gzip.open(vcf, "rt") if zipped else open(
-        vcf
-    ) as vcf, contextlib.ExitStack() as stack:
+    with open(mspfile) as mspfile, gzip.open(vcf, "rt") if zipped else open(vcf) as vcf, contextlib.ExitStack() as stack:
         files = {
             fname: stack.enter_context(open(output_file, "w"))
             for fname, output_file in output_files.items()
@@ -103,9 +96,8 @@ def extract_tracts(msp: str, vcf_prefix: str, zipped: bool, num_ancs: int = 3):
                     calls = ancs_entry[6].split("\t")
                     window = (ancs_entry[0], int(ancs_entry[1]), int(ancs_entry[2]))
 
-                for i, geno in enumerate(
-                    genos
-                ):  # index by the number of individuals in the VCF file, should be the same number in the calls file
+                # index by the number of individuals in the VCF file, should be half the number in the calls file
+                for i, geno in enumerate(genos):
                     geno = geno.split(":")[0].split("|")
                     geno_a = str(geno[0])
                     geno_b = str(geno[1])

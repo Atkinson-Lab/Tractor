@@ -12,4 +12,4 @@ In this repo, we provide scripts comprising the full Tractor pipeline for (1) re
 The pipeline is currently designed assuming RFmix_v2 and phased VCF format genotype input and consists of separate scripts for maximum flexibility of use. These scripts can be run in sequence to do all the steps or, if long-range tracts will not impact the goals of the analysis, the user can skip right to ancestry dosage calculation and running our GWAS model. GWAS steps can scale to an arbitrary user-specified number of ancestries.
 
 
-**Important**: The success of Tractor relies on good local ancestry calls. Please ensure your LAI performance is highly accurate before running a Tractor GWAS. We recommend admixture simulations to test accuracy for your demographic use case, which can be done with a program such as https://github.com/williamslab/admix-simu. 
+**Important**: The success of Tractor relies on good local ancestry calls. Please ensure your LAI performance is highly accurate before running a Tractor GWAS.

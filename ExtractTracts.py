@@ -38,7 +38,9 @@ def extract_tracts(msp: str, vcf_prefix: str, zipped: bool, num_ancs: int = 2):
         output_files[f"dos{i}"] = f"{vcf_prefix}.anc{i}.dosage.txt"
         output_files[f"ancdos{i}"] = f"{vcf_prefix}.anc{i}.hapcount.txt"
 
-    with open(mspfile) as mspfile, gzip.open(vcf, "rt") if zipped else open(vcf) as vcf, contextlib.ExitStack() as stack:
+    with open(mspfile) as mspfile, gzip.open(vcf, "rt") if zipped else open(
+        vcf
+    ) as vcf, contextlib.ExitStack() as stack:
         files = {
             fname: stack.enter_context(open(output_file, "w"))
             for fname, output_file in output_files.items()
@@ -68,8 +70,8 @@ def extract_tracts(msp: str, vcf_prefix: str, zipped: bool, num_ancs: int = 2):
                 # Entry format is ['chrom', 'pos', 'id', 'ref', 'alt', 'qual', 'filter', 'info', 'format', 'genotypes']
                 row = line.strip().split("\t", 9)
 
-                # print(row)
                 # Grab fields needed for each file output
+                row[8] = "GT"  # Update FORMAT field to only keep GT
                 vcf_out = "\t".join(row[:9])
                 dos_anc_out = "\t".join(row[:5])
 
@@ -99,7 +101,9 @@ def extract_tracts(msp: str, vcf_prefix: str, zipped: bool, num_ancs: int = 2):
 
                 # index by the number of individuals in the VCF file, should be half the number in the calls file
                 for i, geno in enumerate(genos):
-                    geno = geno.split(":")[0].split("|") #assert incase eagle leaves some genos unphased
+                    geno = geno.split(":")[0].split(
+                        "|"
+                    )  # assert incase eagle leaves some genos unphased
                     geno_a = str(geno[0])
                     geno_b = str(geno[1])
                     call_a = str(calls[2 * i])
@@ -108,7 +112,7 @@ def extract_tracts(msp: str, vcf_prefix: str, zipped: bool, num_ancs: int = 2):
                     anc_counts = {anc: 0 for anc in range(num_ancs)}
                     for j in range(num_ancs):
                         pop_genos[j] = ""
-                        if call_a == str(j):  # j may need to be converted to string
+                        if call_a == str(j):
                             pop_genos[j] += geno_a
                             anc_counts[j] += 1
                             if geno_a == "1":
@@ -116,7 +120,7 @@ def extract_tracts(msp: str, vcf_prefix: str, zipped: bool, num_ancs: int = 2):
                         else:
                             pop_genos[j] += "."
 
-                        if call_b == str(j):  # j may need to be converted to string
+                        if call_b == str(j):
                             pop_genos[j] += "|" + geno_b
                             anc_counts[j] += 1
                             if geno_b == "1":

@@ -16,7 +16,6 @@ ExtractTracts.py --msp  <an ancestral calls file prefix produced by RFmix versio
 # input is expected to be a VCF file suffixed with .vcf and an ancestral calls file produced by RFmix version 2, suffixed with .msp.tsv
 # output will be returned in the same location as input VCF file with same naming convention
 
-
 def extract_tracts(msp: str, vcf_prefix: str, zipped: bool, num_ancs: int = 2):
     """
     Extract ancestry segments from reference populations in admixed samples.
@@ -70,6 +69,7 @@ def extract_tracts(msp: str, vcf_prefix: str, zipped: bool, num_ancs: int = 2):
 
                 # print(row)
                 # Grab fields needed for each file output
+                row[8]="GT" # Update FORMAT field to only keep GT
                 vcf_out = "\t".join(row[:9])
                 dos_anc_out = "\t".join(row[:5])
 

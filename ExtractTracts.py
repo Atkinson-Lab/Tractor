@@ -1,132 +1,165 @@
-# coding: utf-8
+# Tractor script to extract out ancestry segments from each reference population from admixed samples.
+__author__ = "egatkinson"
 
-# script to extract out ancestry segments from each reference population from admixed samples.
-__author__ = 'egatkinson'
 
 import argparse
+import gzip
+import contextlib
 
-"""
-USAGE:
-ExtractTracts.py --msp  <an ancestral calls file produced by RFmix version 2, suffixed with .msp.tsv>
-                             --vcf <VCF file suffixed with .vcf>
+USAGE = """
+ExtractTracts.py --msp  <an ancestral calls file prefix produced by RFmix version 2, do not include file extension .msp.tsv>
+                --vcf <VCF file prefix, do not include file extensions (.vcf, .vcf.gz) off>
+                --zipped <Whether VCF is gzipped (stored as True so do not use unless VCF is gzipped))>
+                --num-ancs <Number of ancestral populations within the msp file>
 """
 
 # input is expected to be a VCF file suffixed with .vcf and an ancestral calls file produced by RFmix version 2, suffixed with .msp.tsv
+# output will be returned in the same location as input VCF file with same naming convention
 
-def parse_args():
+
+def extract_tracts(msp: str, vcf_prefix: str, zipped: bool, num_ancs: int = 2):
+    """
+    Extract ancestry segments from reference populations in admixed samples.
+
+    Parse phased VCF into N ancestry-specific VCFs, dosage count files, and haplotype count files using a msp file sample ancestry look up.
+
+    :param msp: Prefix to msp file.
+    :param vcf_prefix: Prefix to VCF file.
+    :param zipped: Whether of not the VCF file is gzipped.
+    :param num_ancs: The number of ancestries within the msp file
+    """
+    mspfile = f"{msp}.msp.tsv"
+    vcf = f"{vcf_prefix}.vcf.gz" if zipped else f"{vcf_prefix}.vcf"
+    output_files = {}
+
+    # Output files: vcf, dosage, haplotype count per passed ancestry
+    for i in range(num_ancs):
+        output_files[f"vcf{i}"] = f"{vcf_prefix}.anc{i}.vcf"
+        output_files[f"dos{i}"] = f"{vcf_prefix}.anc{i}.dosage.txt"
+        output_files[f"ancdos{i}"] = f"{vcf_prefix}.anc{i}.hapcount.txt"
+
+    with open(mspfile) as mspfile, gzip.open(vcf, "rt") if zipped else open(
+        vcf
+    ) as vcf, contextlib.ExitStack() as stack:
+        files = {
+            fname: stack.enter_context(open(output_file, "w"))
+            for fname, output_file in output_files.items()
+        }
+        vcf_header = ""
+        window = ("", 0, 0)  # initialize documenting the current window to check
+
+        for line in vcf:
+            if line.startswith("##"):
+                vcf_header = vcf_header + line
+                continue
+            elif line.startswith("#"):
+                vcf_header = vcf_header + line
+                anc_header = "\t".join(
+                    [
+                        line.strip("# ").split("\t", 9)[item]
+                        for item in [0, 1, 2, 3, 4, 9]
+                    ]
+                )
+
+                for i in range(num_ancs):  # Write header into each output vcf
+                    files[f"vcf{i}"].write(vcf_header)
+                    files[f"dos{i}"].write(anc_header)
+                    files[f"ancdos{i}"].write(anc_header)
+
+            if not line.startswith("#"):
+                # Entry format is ['chrom', 'pos', 'id', 'ref', 'alt', 'qual', 'filter', 'info', 'format', 'genotypes']
+                row = line.strip().split("\t", 9)
+
+                # Grab fields needed for each file output
+                row[8] = "GT"  # Update FORMAT field to only keep GT
+                vcf_out = "\t".join(row[:9])
+                dos_anc_out = "\t".join(row[:5])
+
+                # split each strand geno call apart from each other
+                genos = row[9].split("\t")
+                pos = int(row[1])
+                output_lines = {}
+                pop_genos = {}
+
+                for i in range(num_ancs):  # Write entries into each output file
+                    output_lines[f"vcf{i}"] = vcf_out
+                    output_lines[f"dos{i}"] = dos_anc_out
+                    output_lines[f"ancdos{i}"] = dos_anc_out
+
+                # optimized for quicker runtime - only move to next line when out of the current msp window
+                # saves the current line until out of the window, then checks next line. VCF and window switches file should be in incremental order.
+                while not (row[0] == window[0] and (window[1] <= pos < window[2])):
+                    ancs = mspfile.readline()
+                    if ancs.startswith("#"):  # skip the header lines
+                        continue
+                    if not ancs:
+                        break  # when get to the end of the msp file, stop
+                    # chm, spos, epos, sgpos, egpos, nsnps, calls
+                    ancs_entry = ancs.strip().split("\t", 6)
+                    calls = ancs_entry[6].split("\t")
+                    window = (ancs_entry[0], int(ancs_entry[1]), int(ancs_entry[2]))
+
+                # index by the number of individuals in the VCF file, should be half the number in the calls file
+                for i, geno in enumerate(genos):
+                    geno = geno.split(":")[0].split(
+                        "|"
+                    )  # assert incase eagle leaves some genos unphased
+                    geno_a = str(geno[0])
+                    geno_b = str(geno[1])
+                    call_a = str(calls[2 * i])
+                    call_b = str(calls[2 * i + 1])
+                    counts = {anc: 0 for anc in range(num_ancs)}
+                    anc_counts = {anc: 0 for anc in range(num_ancs)}
+                    for j in range(num_ancs):
+                        pop_genos[j] = ""
+                        if call_a == str(j):
+                            pop_genos[j] += geno_a
+                            anc_counts[j] += 1
+                            if geno_a == "1":
+                                counts[j] += 1
+                        else:
+                            pop_genos[j] += "."
+
+                        if call_b == str(j):
+                            pop_genos[j] += "|" + geno_b
+                            anc_counts[j] += 1
+                            if geno_b == "1":
+                                counts[j] += 1
+                        else:
+                            pop_genos[j] += "|."
+
+                        output_lines[f"vcf{j}"] += "\t" + pop_genos[j]
+                        output_lines[f"dos{j}"] += "\t" + str(counts[j])
+                        output_lines[f"ancdos{j}"] += "\t" + str(anc_counts[j])
+
+                for j in range(num_ancs):
+                    output_lines[f"vcf{j}"] += "\n"
+                    output_lines[f"dos{j}"] += "\n"
+                    output_lines[f"ancdos{j}"] += "\n"
+
+                    files[f"vcf{j}"].write(output_lines[f"vcf{j}"])
+                    files[f"dos{j}"].write(output_lines[f"dos{j}"])
+                    files[f"ancdos{j}"].write(output_lines[f"ancdos{j}"])
+
+
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--msp', help='path stem to RFmix msp file, not including .msp.tsv', required=True)
-    parser.add_argument('--vcf', help='path stem to RFmix input VCF with phased genotypes, not including .vcf suffix',
-                        required=True)
+    parser.add_argument(
+        "--msp",
+        help="path stem to RFmix msp file, not including .msp.tsv",
+        required=True,
+    )
+    parser.add_argument(
+        "--vcf-prefix",
+        help="path stem to RFmix input VCF with phased genotypes, not including .vcf suffix",
+        required=True,
+    )
+    parser.add_argument("--zipped", help="Input VCF is gzipped", action="store_true")
+    parser.add_argument(
+        "--num-ancs",
+        type=int,
+        help="Number of continental ancestries in admixed populations",
+        default=2,
+    )
     args = parser.parse_args()
-    return (args)
-
-
-args = parse_args()
-mspfile = open(args.msp + '.msp.tsv', 'r')
-genofile = open(args.vcf + '.vcf', 'r')
-out0 = open(args.vcf + '.anc0.vcf', 'w')  # output for the extracted VCF anc 0
-out1 = open(args.vcf + '.anc1.vcf', 'w')  # output for the extracted VCF anc 1
-outdos0 = open(args.vcf + '.anc0.dosage.txt', 'w')  # output dosages for each ancestry into separate files
-outdos1 = open(args.vcf + '.anc1.dosage.txt', 'w')  # output dosages for each ancestry into separate files
-outancdos0 = open(args.vcf + '.anc0.hapcount.txt', 'w')  # output number of haplotype for each ancestry into separate files
-outancdos1 = open(args.vcf + '.anc1.hapcount.txt', 'w')  # output number of haplotype for each ancestry into separate files
-
-# initialize documenting the current window to check
-chromosome = ("", 0, 0)
-
-for line in genofile:
-    if line.startswith("#"):
-        out0.write(line)
-        out1.write(line)
-        continue
-    if not line:
-      break #stop when get to the end of the file
-    CHROM, POS, ID, REF, ALT, QUAL, FILTER, INFO, FORMAT, genos = line.strip().split('\t', 9)
-    genos = genos.replace('|', '\t').split('\t')  # split each strand geno call apart from each other
-    output0 = '\t'.join([CHROM, POS, ID, REF, ALT, QUAL, FILTER, INFO, FORMAT])
-    output1 = '\t'.join([CHROM, POS, ID, REF, ALT, QUAL, FILTER, INFO, FORMAT])
-    outputdos0 = '\t'.join([CHROM, POS, ID])
-    outputdos1 = '\t'.join([CHROM, POS, ID])
-    outputancdos0 = '\t'.join([CHROM, POS, ID])
-    outputancdos1 = '\t'.join([CHROM, POS, ID])
-    POS = int(POS)
-
-    # optimized for quicker runtime - only move to next line when out of the current msp window
-    # save current line until out of window, then check next line. Input files should be in incremental order.
-    while not (CHROM == chromosome[0] and (chromosome[1] <= POS < chromosome[2])):
-        ancs = mspfile.readline()
-        if ancs.startswith("#"):  # skip the header lines
-            continue
-        if not ancs:
-            break  # when get to the end of the msp file, stop
-        chm, spos, epos, sgpos, egpos, nsnps, calls = ancs.strip().split('\t', 6)
-        calls = calls.split('\t')
-        chromosome = (chm, int(spos), int(epos))
-
-    for i in range(len(genos) // 2):
-        # index by the number of individuals in the VCF file, should be the same number in the calls file
-        genoA = str(genos[2 * i])
-        genoB = str(genos[2 * i + 1])
-        callA = str(calls[2 * i])
-        callB = str(calls[2 * i + 1])
-        count0 = 0
-        count1 = 0
-        count_anc0 = 0
-        count_anc1 = 0
-
-        # if the anc call is 0, keep, replace 1 or other calls with missing data
-        if callA == '0':
-            genoA0 = genoA
-            genoA1 = "."
-            count_anc0 = count_anc0 + 1  # tally up the ancestral haplotypes present at each site
-            if genoA == '1':  # tally up counts of the minor/risk allele for each ancestry; technically the alternate allele here
-                count0 = count0 + 1
-        elif callA == '1':
-            genoA0 = "."
-            genoA1 = genoA  # if the anc call is 1, keep, otherwise make into missing data
-            count_anc1 = count_anc1 + 1
-            if genoA1 == '1':
-                count1 = count1 + 1
-
-        if callB == '0':
-            genoB0 = genoB
-            genoB1 = "."
-            count_anc0 = count_anc0 + 1
-            if genoB0 == '1':
-                count0 = count0 + 1
-        elif callB == '1':
-            genoB0 = "."
-            genoB1 = genoB
-            count_anc1 = count_anc1 + 1
-            if genoB1 == '1':
-                count1 = count1 + 1
-
-        output0 += '\t' + genoA0 + "|" + genoB0
-        output1 += '\t' + genoA1 + "|" + genoB1
-        outputdos0 += '\t' + str(count0)  
-        # output the dosage for alt allele for each ancestry at each position for each indiv in the VCF file.
-        outputdos1 += '\t' + str(count1)
-        outputancdos0 += '\t' + str(count_anc0)
-        outputancdos1 += '\t' + str(count_anc1)
-
-    output0 += '\n'
-    output1 += '\n'
-    outputdos0 += '\n'
-    outputdos1 += '\n'
-    outputancdos0 += '\n'
-    outputancdos1 += '\n'
-
-    out0.write(output0)
-    out1.write(output1)
-    outdos0.write(outputdos0)
-    outdos1.write(outputdos1)
-    outancdos0.write(outputancdos0)
-    outancdos1.write(outputancdos1)
-
-out0.close()
-out1.close()
-outdos0.close()
-outdos1.close()
-outancdos0.close()
-outancdos1.close()
+    extract_tracts(**vars(args))

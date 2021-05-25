@@ -45,7 +45,7 @@ hapcounts0 = hapcounts0.key_rows_by(locus=hl.locus(hapcounts0.CHROM, hapcounts0.
 ##if more than 2 way admixed, load in additional ancestry files with same sytax
 
 #join the ancestry and haplotype dosage files together into a Hail matrix table
-mt = anc0dos.annotate_entries(anc1dos = anc1dos[anc0dos.locus, anc0dos.col_id], hapcounts0 = hapcounts0[mt.locus, mt.col_id])
+mt = anc0dos.annotate_entries(anc1dos = anc1dos[anc0dos.locus, anc0dos.col_id], hapcounts0 = hapcounts0[anc0dos.locus, anc0dos.col_id])
 
 #Here's an example showing the implementation if cohort data is 3 way admixed
 #mt = anc0dos.annotate_entries(anc1dos = anc1dos[anc0dos.locus, anc0dos.col_id], anc2dos = anc2dos[anc0dos.locus, anc0dos.col_id], hapcounts0 = hapcounts0[mt.locus, mt.col_id], hapcounts1 = hapcounts1[mt.locus, mt.col_id]))

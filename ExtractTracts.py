@@ -9,7 +9,7 @@ import contextlib
 USAGE = """
 ExtractTracts.py --msp  <an ancestral calls file prefix produced by RFmix version 2, do not include file extension .msp.tsv>
                 --vcf <VCF file prefix, do not include file extensions (.vcf, .vcf.gz) off>
-                --zipped <Whether VCF is gzipped (stored as True so do not use unless VCF is gzipped))>
+                --zipped <Whether VCF is gzipped (stored as True so do not use unless VCF is gzipped)>
                 --num-ancs <Number of ancestral populations within the msp file>
 """
 

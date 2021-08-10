@@ -36,21 +36,22 @@ def extract_tracts(msp: str, vcf_prefix: str, zipped: bool, zip_output:bool, out
     mspfile = f"{msp}.msp.tsv"
     vcf = f"{vcf_prefix}.vcf.gz" if zipped else f"{vcf_prefix}.vcf"
     output_files = {}
-    output_path = f"{output_path}." if output_path else ""
+    output_path = f"{output_path if output_path else vcf_prefix}."
+    file_extension = f"{'.gz' if zip_output else ''}"
 
     # Output files: vcf, dosage, haplotype count per passed ancestry
     logger.info("Creating output files for %d ancestries", num_ancs)
     for i in range(num_ancs):
-        output_files[f"vcf{i}"] = f"{output_path}anc{i}.vcf{'.gz' if args.zip_output else ''}"
-        output_files[f"dos{i}"] = f"{output_path}anc{i}.dosage.txt{'.gz' if args.zip_output else ''}"
-        output_files[f"ancdos{i}"] = f"{output_path}anc{i}.hapcount.txt{'.gz' if args.zip_output else ''}"
+        output_files[f"vcf{i}"] = f"{output_path}anc{i}.vcf{file_extension}"
+        output_files[f"dos{i}"] = f"{output_path}anc{i}.dosage.txt{file_extension}"
+        output_files[f"ancdos{i}"] = f"{output_path}anc{i}.hapcount.txt{file_extension}"
 
     logger.info("Opening input and output files for reading and writing")
     with open(mspfile) as mspfile, gzip.open(vcf, "rt") if zipped else open(
         vcf
     ) as vcf, contextlib.ExitStack() as stack:
         files = {
-            fname: stack.enter_context(gzip.open(output_file, "wt") if args.zip_output else open(output_file, "w"))
+            fname: stack.enter_context(gzip.open(output_file, "wt") if zip_output else open(output_file, "w"))
             for fname, output_file in output_files.items()
         }
         vcf_header = ""

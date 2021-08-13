@@ -3,13 +3,18 @@ __author__ = "egatkinson"
 
 
 import argparse
-import gzip
 import contextlib
+import gzip
+import logging
+
+logging.basicConfig(format="%(levelname)s (%(name)s %(lineno)s): %(message)s")
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 USAGE = """
 ExtractTracts.py --msp  <an ancestral calls file prefix produced by RFmix version 2, do not include file extension .msp.tsv>
                 --vcf <VCF file prefix, do not include file extensions (.vcf, .vcf.gz) off>
-                --zipped <Whether VCF is gzipped (stored as True so do not use unless VCF is gzipped)>
+                --zipped <Whether VCF is gzipped (stored as True so do not use unless VCF is gzipped))>
                 --num-ancs <Number of ancestral populations within the msp file>
 """
 
@@ -17,7 +22,7 @@ ExtractTracts.py --msp  <an ancestral calls file prefix produced by RFmix versio
 # output will be returned in the same location as input VCF file with same naming convention
 
 
-def extract_tracts(msp: str, vcf_prefix: str, zipped: bool, num_ancs: int = 2):
+def extract_tracts(msp: str, vcf_prefix: str, zipped: bool, zip_output:bool, output_path:str, num_ancs: int = 2):
     """
     Extract ancestry segments from reference populations in admixed samples.
 
@@ -31,18 +36,22 @@ def extract_tracts(msp: str, vcf_prefix: str, zipped: bool, num_ancs: int = 2):
     mspfile = f"{msp}.msp.tsv"
     vcf = f"{vcf_prefix}.vcf.gz" if zipped else f"{vcf_prefix}.vcf"
     output_files = {}
+    output_path = f"{output_path if output_path else vcf_prefix}."
+    file_extension = f"{'.gz' if zip_output else ''}"
 
     # Output files: vcf, dosage, haplotype count per passed ancestry
+    logger.info("Creating output files for %d ancestries", num_ancs)
     for i in range(num_ancs):
-        output_files[f"vcf{i}"] = f"{vcf_prefix}.anc{i}.vcf"
-        output_files[f"dos{i}"] = f"{vcf_prefix}.anc{i}.dosage.txt"
-        output_files[f"ancdos{i}"] = f"{vcf_prefix}.anc{i}.hapcount.txt"
+        output_files[f"vcf{i}"] = f"{output_path}anc{i}.vcf{file_extension}"
+        output_files[f"dos{i}"] = f"{output_path}anc{i}.dosage.txt{file_extension}"
+        output_files[f"ancdos{i}"] = f"{output_path}anc{i}.hapcount.txt{file_extension}"
 
+    logger.info("Opening input and output files for reading and writing")
     with open(mspfile) as mspfile, gzip.open(vcf, "rt") if zipped else open(
         vcf
     ) as vcf, contextlib.ExitStack() as stack:
         files = {
-            fname: stack.enter_context(open(output_file, "w"))
+            fname: stack.enter_context(gzip.open(output_file, "wt") if zip_output else open(output_file, "w"))
             for fname, output_file in output_files.items()
         }
         vcf_header = ""
@@ -65,7 +74,6 @@ def extract_tracts(msp: str, vcf_prefix: str, zipped: bool, num_ancs: int = 2):
                     files[f"vcf{i}"].write(vcf_header)
                     files[f"dos{i}"].write(anc_header)
                     files[f"ancdos{i}"].write(anc_header)
-
             if not line.startswith("#"):
                 # Entry format is ['chrom', 'pos', 'id', 'ref', 'alt', 'qual', 'filter', 'info', 'format', 'genotypes']
                 row = line.strip().split("\t", 9)
@@ -81,7 +89,7 @@ def extract_tracts(msp: str, vcf_prefix: str, zipped: bool, num_ancs: int = 2):
                 output_lines = {}
                 pop_genos = {}
 
-                for i in range(num_ancs):  # Write entries into each output file
+                for i in range(num_ancs):  # Write entries into each output files' list
                     output_lines[f"vcf{i}"] = vcf_out
                     output_lines[f"dos{i}"] = dos_anc_out
                     output_lines[f"ancdos{i}"] = dos_anc_out
@@ -127,7 +135,6 @@ def extract_tracts(msp: str, vcf_prefix: str, zipped: bool, num_ancs: int = 2):
                                 counts[j] += 1
                         else:
                             pop_genos[j] += "|."
-
                         output_lines[f"vcf{j}"] += "\t" + pop_genos[j]
                         output_lines[f"dos{j}"] += "\t" + str(counts[j])
                         output_lines[f"ancdos{j}"] += "\t" + str(anc_counts[j])
@@ -136,30 +143,34 @@ def extract_tracts(msp: str, vcf_prefix: str, zipped: bool, num_ancs: int = 2):
                     output_lines[f"vcf{j}"] += "\n"
                     output_lines[f"dos{j}"] += "\n"
                     output_lines[f"ancdos{j}"] += "\n"
-
                     files[f"vcf{j}"].write(output_lines[f"vcf{j}"])
                     files[f"dos{j}"].write(output_lines[f"dos{j}"])
                     files[f"ancdos{j}"].write(output_lines[f"ancdos{j}"])
+    logger.info("Finished extracting tracts per %d ancestries", num_ancs)
+
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--msp",
-        help="path stem to RFmix msp file, not including .msp.tsv",
+        help="path stem to RFmix msp file, not including .msp.tsv .",
         required=True,
     )
     parser.add_argument(
         "--vcf-prefix",
-        help="path stem to RFmix input VCF with phased genotypes, not including .vcf suffix",
+        help="path stem to RFmix input VCF with phased genotypes, not including .vcf suffix.",
         required=True,
     )
-    parser.add_argument("--zipped", help="Input VCF is gzipped", action="store_true")
+    parser.add_argument("--output-path", help="Optional output path for files and file prefix, e.g. ~/test_data/test1 .")
+    parser.add_argument("--zipped", help="Input VCF is gzipped.", action="store_true")
+    parser.add_argument("--zip-output", help="Gzip all output files.", action="store_true")
     parser.add_argument(
         "--num-ancs",
         type=int,
-        help="Number of continental ancestries in admixed populations",
+        help="Number of continental ancestries in admixed populations.",
         default=2,
     )
+
     args = parser.parse_args()
     extract_tracts(**vars(args))

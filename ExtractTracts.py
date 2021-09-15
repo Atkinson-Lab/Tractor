@@ -96,7 +96,11 @@ def extract_tracts(msp: str, vcf_prefix: str, zipped: bool, zip_output:bool, out
 
                 # optimized for quicker runtime - only move to next line when out of the current msp window
                 # saves the current line until out of the window, then checks next line. VCF and window switches file should be in incremental order.
+
                 while not (row[0] == window[0] and (window[1] <= pos < window[2])):
+                    if row[0] == window[0] and window[1]> pos:
+                        skip_line=True #Skip VCF line
+                        break #Break out of msp scanning because the VCF position is still before the windows start
                     ancs = mspfile.readline()
                     if ancs.startswith("#"):  # skip the header lines
                         continue

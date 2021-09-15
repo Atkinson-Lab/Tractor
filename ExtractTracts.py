@@ -1,7 +1,6 @@
 # Tractor script to extract out ancestry segments from each reference population from admixed samples.
 __author__ = "egatkinson"
 
-
 import argparse
 import contextlib
 import gzip
@@ -55,9 +54,10 @@ def extract_tracts(msp: str, vcf_prefix: str, zipped: bool, zip_output:bool, out
             for fname, output_file in output_files.items()
         }
         vcf_header = ""
-        window = ("", 0, 0)  # initialize documenting the current window to check
+        window = ("", 0, 0)  # initialize the current window to check
 
         for line in vcf:
+            skip_line=False
             if line.startswith("##"):
                 vcf_header = vcf_header + line
                 continue
@@ -96,7 +96,11 @@ def extract_tracts(msp: str, vcf_prefix: str, zipped: bool, zip_output:bool, out
 
                 # optimized for quicker runtime - only move to next line when out of the current msp window
                 # saves the current line until out of the window, then checks next line. VCF and window switches file should be in incremental order.
+
                 while not (row[0] == window[0] and (window[1] <= pos < window[2])):
+                    if row[0] == window[0] and window[1]> pos:
+                        skip_line=True #Skip VCF line
+                        break #Break out of msp scanning because the VCF position is still before the windows start
                     ancs = mspfile.readline()
                     if ancs.startswith("#"):  # skip the header lines
                         continue
@@ -106,6 +110,12 @@ def extract_tracts(msp: str, vcf_prefix: str, zipped: bool, zip_output:bool, out
                     ancs_entry = ancs.strip().split("\t", 6)
                     calls = ancs_entry[6].split("\t")
                     window = (ancs_entry[0], int(ancs_entry[1]), int(ancs_entry[2]))
+                    if row[0] == window[0] and window[1]> pos:
+                        skip_line=True #Skip VCF line
+                        break #Break out of msp scanning because the VCF position is before the windows start
+                if skip_line:
+                    logger.info(f"VCF position, {pos} is not in an msp window, skipping site")
+                    continue # Skip VCF site and continue to next site
 
                 # index by the number of individuals in the VCF file, should be half the number in the calls file
                 for i, geno in enumerate(genos):
@@ -147,8 +157,6 @@ def extract_tracts(msp: str, vcf_prefix: str, zipped: bool, zip_output:bool, out
                     files[f"dos{j}"].write(output_lines[f"dos{j}"])
                     files[f"ancdos{j}"].write(output_lines[f"ancdos{j}"])
     logger.info("Finished extracting tracts per %d ancestries", num_ancs)
-
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

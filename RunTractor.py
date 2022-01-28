@@ -95,7 +95,6 @@ def test_func(hapdose: str, phe: str, method: str, out:str):
             outfile.write(WriteHeader(nParam))  
 
             # use the first file as line to iterate
-            i = 1
             while lines[0]:
                 try:
                     lines = [file.readline() for file in files]

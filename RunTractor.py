@@ -149,7 +149,7 @@ def Str2Int(lst):
 def WriteHeader(nParam):
     header = "CHROM\tPOS\tID\tREF\tALT\t"
     for i in range(nParam):
-        header = header + ("ANC{0}EFF\tANCP{0}\t".format(str(i))) 
+        header = header + ("ANC{0}EFF\tANC{0}P\t".format(str(i))) 
     return(header[:-1] + "\n")
 
 

@@ -72,7 +72,7 @@ def test_func(hapdose: str, phe: str, method: str, out:str):
 
                     # use statsmodel at the moment, maybe will need to change it due to performance issue
                     X2 = sm.add_constant(X1)
-                    est = sm.OLS(y, X2, missing = ‘drop’).fit()
+                    est = sm.OLS(y, X2, missing = 'drop').fit()
                     
                     estimates = np.full([nParam*2], np.nan)
                     estimates[::2] = est.params[nParam:2*nParam]
@@ -111,7 +111,7 @@ def test_func(hapdose: str, phe: str, method: str, out:str):
                         with warnings.catch_warnings():
                             warnings.simplefilter("ignore")
                             X2 = sm.add_constant(X1)
-                            est = sm.Logit(y, X2, missing = ‘drop’).fit(disp=0)
+                            est = sm.Logit(y, X2, missing = 'drop').fit(disp=0)
                         
                         estimates = np.full([nParam*2], np.nan)
                         estimates[::2] = est.params[nParam:2*nParam]

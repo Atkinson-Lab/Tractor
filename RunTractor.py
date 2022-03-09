@@ -8,9 +8,8 @@ import gzip
 import logging
 import glob
 import numpy as np
-from sklearn.linear_model import LinearRegression
-import statsmodels.api as sm
 import pandas as pd
+import statsmodels.api as sm
 import warnings
 
 
@@ -49,6 +48,20 @@ def test_func(hapdose: str, phe: str, method: str, out:str):
     y = np.array(phetbl.iloc[:,1])
     cov = np.array(phetbl.iloc[:,2:])
 
+    if (phetbl.columns[0] != "IID") | (phetbl.columns[1] != "y"):
+        print("ERROR: Make sure include header your Phenotype file")
+        print("Format should look like: ")
+        print("IID\ty\t...")
+        return
+    
+    if (method == "logistic") & (not(all(idx in (0.0, 1.0) for idx in phetbl.y[~np.isnan(phetbl.y)]))):
+        print("ERROR: Phenotype must be encode as 0, 1, or blank")
+        return
+
+    
+
+
+
     if (method == "linear"):
         print("Runing Linear Regression Analysis...")
         with contextlib.ExitStack() as stack, open(out, 'w') as outfile:
@@ -56,6 +69,11 @@ def test_func(hapdose: str, phe: str, method: str, out:str):
             
             # possible to add function to check errors
             lines = [file.readline().rstrip('\n').split(",") for file in files]
+            
+            if lines[0][0].split("\t")[5:] != list(phetbl.IID):
+                print("ERROR: Phenotype ID must match with Hapdose file ID")
+                return
+            
 
             outfile.write(WriteHeader(nParam))  
 
@@ -72,11 +90,27 @@ def test_func(hapdose: str, phe: str, method: str, out:str):
 
                     # use statsmodel at the moment, maybe will need to change it due to performance issue
                     X2 = sm.add_constant(X1)
-                    est = sm.OLS(y, X2, missing = 'drop').fit()
-                    
+
+                    # check singularity before running the program -- QR decomposition 
+                    colboo = FindIndCol(X2)
+                    X4model = X2[:,colboo]
+
+                    # fit linear regression
+                    est = sm.OLS(y, X4model, missing = 'drop').fit()
+
+
+                    # two vectors that contains effect size estimates and p values
+                    betaEst = np.full([len(colboo)], np.nan)
+                    betaEst[colboo] = est.params
+
+                    pEst = np.full([len(colboo)], np.nan)
+                    pEst[colboo] = est.pvalues
+                    betaEst[np.isnan(pEst)] = np.nan
+
+                    # write betaEst and pEst into a new vector 
                     estimates = np.full([nParam*2], np.nan)
-                    estimates[::2] = est.params[nParam:2*nParam]
-                    estimates[1::2] = est.pvalues[nParam:2*nParam]
+                    estimates[::2] = betaEst[nParam:2*nParam]
+                    estimates[1::2] = pEst[nParam:2*nParam]
                     
                     outfile.write('\t'.join(plines[0][0:5]) +"\t" + "\t".join([str(int) for int in list(estimates)]) +"\n" )     
                     
@@ -91,6 +125,10 @@ def test_func(hapdose: str, phe: str, method: str, out:str):
             
             # possible to add function to check errors
             lines = [file.readline().rstrip('\n').split(",") for file in files]
+
+            if lines[0][0].split("\t")[5:] != list(phetbl.IID):
+                print("ERROR: Phenotype ID must match with Hapdose file ID")
+                return
 
             outfile.write(WriteHeader(nParam))  
 
@@ -111,11 +149,25 @@ def test_func(hapdose: str, phe: str, method: str, out:str):
                         with warnings.catch_warnings():
                             warnings.simplefilter("ignore")
                             X2 = sm.add_constant(X1)
-                            est = sm.Logit(y, X2, missing = 'drop').fit(disp=0)
+
+                            # check singularity before running the program -- QR decomposition 
+                            colboo = FindIndCol(X2)
+                            X4model = X2[:,colboo]
+
+                            est = sm.Logit(y, X4model, missing = 'drop').fit(disp=0)
+
+                            # two vectors that contains effect size estimates and p values
+                            betaEst = np.full([len(colboo)], np.nan)
+                            betaEst[colboo] = est.params
+
+                            pEst = np.full([len(colboo)], np.nan)
+                            pEst[colboo] = est.pvalues
+                            betaEst[np.isnan(pEst)] = np.nan
+
                         
                         estimates = np.full([nParam*2], np.nan)
-                        estimates[::2] = est.params[nParam:2*nParam]
-                        estimates[1::2] = est.pvalues[nParam:2*nParam]
+                        estimates[::2] = betaEst[nParam:2*nParam]
+                        estimates[1::2] = pEst[nParam:2*nParam]
                     
                         outfile.write('\t'.join(plines[0][0:5]) +"\t" + "\t".join([str(int) for int in list(estimates)]) +"\n" )  
                     except:
@@ -137,10 +189,6 @@ def test_func(hapdose: str, phe: str, method: str, out:str):
 
 
 
-
-
-
-
 # a function that convert str to int
 def Str2Int(lst):
     return list(map(int, lst))
@@ -152,6 +200,9 @@ def WriteHeader(nParam):
         header = header + ("ANC{0}EFF\tANC{0}P\t".format(str(i))) 
     return(header[:-1] + "\n")
 
+# a function that returns a boolean that represents which columns to include (check singularity)
+def FindIndCol(X):
+    return (np.invert(np.all(abs(np.linalg.qr(X)[1]) < 1e-10, axis=1)))
 
 
 if __name__ == "__main__":

@@ -31,8 +31,8 @@ RunTractor.py --hapdose  <prefix of deconvoluted ancestries and risk alleles fil
 def test_func(hapdose: str, phe: str, method: str, out:str):
 
     # read files 
-    hapfiles = sorted(glob.glob(hapdose + '*.hapcount.txt'))
-    dosefiles = sorted(glob.glob(hapdose + '*.dosage.txt'))
+    hapfiles = sorted(glob.glob(hapdose + '.*.hapcount.txt'))
+    dosefiles = sorted(glob.glob(hapdose + '.*.dosage.txt'))
 
     file_list = hapfiles[:-1] + dosefiles
     print("Reading files....")

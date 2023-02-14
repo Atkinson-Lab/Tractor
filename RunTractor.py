@@ -28,19 +28,21 @@ RunTractor.py --hapdose  <prefix of deconvoluted ancestries and risk alleles fil
 
 # user should make sure that the order of sample names matches
 
-def test_func(hapdose: str, phe: str, method: str, out:str):
+def run_tractor(hapdose: str, phe: str, method: str, out:str):
 
-    # read files 
+    # read files
     hapfiles = sorted(glob.glob(hapdose + '.*.hapcount.txt'))
     dosefiles = sorted(glob.glob(hapdose + '.*.dosage.txt'))
-
-    file_list = hapfiles[:-1] + dosefiles
+    file_list = hapfiles + dosefiles
+    nParam = int(len(file_list)/2)
     print("Reading files....")
     for i in file_list:
         print("------")
         print(i)
-
-    nParam = int((len(file_list) + 1)/2)
+        
+    print("------")
+    print("Notice:")
+    print("Tractor drop one local ancestry term for regression. Therefore,", hapfiles[-1], "will not be used.")
 
     # read phenotype
     print("------")
@@ -58,151 +60,118 @@ def test_func(hapdose: str, phe: str, method: str, out:str):
         print("ERROR: Phenotype must be encode as 0, 1, or blank")
         return
 
-    
+    with contextlib.ExitStack() as stack, open(out, 'w') as outfile:
+        files = [stack.enter_context(open(fname)) for fname in file_list]
 
+        # possible to add function to check errors
+        lines = [file.readline().rstrip('\n').split(",") for file in files]
 
+        if lines[0][0].split("\t")[5:] != list(phetbl.IID):
+            print("ERROR: Phenotype ID must match with Hapdose file ID")
 
-    if (method == "linear"):
-        print("Runing Linear Regression Analysis...")
-        with contextlib.ExitStack() as stack, open(out, 'w') as outfile:
-            files = [stack.enter_context(open(fname)) for fname in file_list]
-            
-            # possible to add function to check errors
-            lines = [file.readline().rstrip('\n').split(",") for file in files]
-            
-            if lines[0][0].split("\t")[5:] != list(phetbl.IID):
-                print("ERROR: Phenotype ID must match with Hapdose file ID")
-                return
-            
+        outfile.write(WriteHeader(nParam))  
 
-            outfile.write(WriteHeader(nParam))  
-
-            # use the first file as line to iterate
-            while lines[0]:
-                try:
+        # use the first file as line to iterate
+        while lines[0]:
+            try:
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
                     lines = [file.readline() for file in files]
                     plines = [line.rstrip('\n').split("\t") for line in lines]
-                    
                     variant = plines[0][0:5]
                     entry = np.array([Str2Int(line[5:]) for line in plines])
-
-                    X1 = np.column_stack((np.transpose(entry), cov))
-
-                    # use statsmodel at the moment, maybe will need to change it due to performance issue
-                    X2 = sm.add_constant(X1)
-
-                    # check singularity before running the program -- QR decomposition 
-                    colboo = FindIndCol(X2)
-                    X4model = X2[:,colboo]
-
-                    # fit linear regression
-                    est = sm.OLS(y, X4model, missing = 'drop').fit()
-
-
-                    # two vectors that contains effect size estimates and p values
-                    betaEst = np.full([len(colboo)], np.nan)
-                    betaEst[colboo] = est.params
-
-                    pEst = np.full([len(colboo)], np.nan)
-                    pEst[colboo] = est.pvalues
-                    betaEst[np.isnan(pEst)] = np.nan
-
-                    # write betaEst and pEst into a new vector 
-                    estimates = np.full([nParam*2], np.nan)
-                    estimates[::2] = betaEst[nParam:2*nParam]
-                    estimates[1::2] = pEst[nParam:2*nParam]
-                    
-                    outfile.write('\t'.join(plines[0][0:5]) +"\t" + "\t".join([str(int) for int in list(estimates)]) +"\n" )     
-                    
-                except:
-                    print("END of calculation")
-
-
-    elif (method == "logistic"):
-        print("Runing Logistic Regression Analysis...")
-        with contextlib.ExitStack() as stack, open(out, 'w') as outfile:
-            files = [stack.enter_context(open(fname)) for fname in file_list]
-            
-            # possible to add function to check errors
-            lines = [file.readline().rstrip('\n').split(",") for file in files]
-
-            if lines[0][0].split("\t")[5:] != list(phetbl.IID):
-                print("ERROR: Phenotype ID must match with Hapdose file ID")
-                return
-
-            outfile.write(WriteHeader(nParam))  
-
-            # use the first file as line to iterate
-            while lines[0]:
-                try:
-                    lines = [file.readline() for file in files]
-                    plines = [line.rstrip('\n').split("\t") for line in lines]
-                    
-
-                    variant = plines[0][0:5]
-                    entry = np.array([Str2Int(line[5:]) for line in plines])
-
-                    X1 = np.column_stack((np.transpose(entry), cov))
-
+                    AF_LAprop = Compute_AF_LAprop(entry, nParam)
+                    X1 = np.column_stack((np.transpose(entry[np.r_[0:(nParam - 1), nParam:(2 * nParam)], ]), cov))
                     try:
-                        # use statsmodel at the moment, maybe will need to change it due to performance issue
-                        with warnings.catch_warnings():
-                            warnings.simplefilter("ignore")
-                            X2 = sm.add_constant(X1)
-
-                            # check singularity before running the program -- QR decomposition 
-                            colboo = FindIndCol(X2)
-                            X4model = X2[:,colboo]
-
-                            est = sm.Logit(y, X4model, missing = 'drop').fit(disp=0)
-
-                            # two vectors that contains effect size estimates and p values
-                            betaEst = np.full([len(colboo)], np.nan)
-                            betaEst[colboo] = est.params
-
-                            pEst = np.full([len(colboo)], np.nan)
-                            pEst[colboo] = est.pvalues
-                            betaEst[np.isnan(pEst)] = np.nan
-
+                        X2 = sm.add_constant(X1)
                         
-                        estimates = np.full([nParam*2], np.nan)
-                        estimates[::2] = betaEst[nParam:2*nParam]
-                        estimates[1::2] = pEst[nParam:2*nParam]
-                    
-                        outfile.write('\t'.join(plines[0][0:5]) +"\t" + "\t".join([str(int) for int in list(estimates)]) +"\n" )  
+                        if (method == "linear"):
+                            est = sm.OLS(y, X2, missing = 'drop').fit()
+                        elif (method == "logistic"):
+                            est = sm.GLM(y, X2, family=sm.families.Binomial(), missing = 'drop').fit(disp=0)
+                        else:
+                            print("ERROR: method must be either linear or logistic")
+                            return
+
+
+                        LAeff = est.params[1:nParam]
+                        LApval = est.pvalues[1:nParam]
+                        Geff = est.params[(nParam):(2*nParam)]
+                        Gpval = est.pvalues[(nParam):(2*nParam)]
+                        
+                        # fix coefficients if allele frequency = 0
+                        coef2fix_af0 = abs(np.array(AF_LAprop[0:nParam])) < 1e-10
+                        if np.any(coef2fix_af0):
+                            Geff[coef2fix_af0] = np.nan
+                            Gpval[coef2fix_af0] = np.nan
+                        
+                        # fix coefficients if allele frequency = 1
+                        # sometimes the program will explode
+                        coef2fix_af1 = abs(np.array(AF_LAprop[0:nParam]) - 1 ) < 1e-10
+                        if (coef2fix_af1[nParam - 1] == True) or (np.sum(coef2fix_af1) > 1) or np.isnan(est.llf):
+                            Geff[0:nParam] = np.nan
+                            Gpval[0:nParam] = np.nan
+                            LAeff[0:(nParam-1)] = np.nan
+                            LApval[0:(nParam-1)] = np.nan
+                        else:
+                            Geff[coef2fix_af1] = Geff[coef2fix_af1]*2
+                            LAeff[coef2fix_af1[0:(nParam-1)]] = np.nan
+                            LApval[coef2fix_af1[0:(nParam-1)]] = np.nan
+                        outfile.write('\t'.join(plines[0][0:5]) +"\t" + 
+                                    "\t".join([str(k) for k in AF_LAprop]) + "\t" +
+                                    "\t".join([str(k) for k in list(LAeff)]) +"\t" + 
+                                    "\t".join([str(k) for k in list(LApval)]) + "\t" +
+                                    "\t".join([str(k) for k in list(Geff)]) +"\t" + 
+                                    "\t".join([str(k) for k in list(Gpval)]) + "\n" )  
+                        
                     except:
+                        lines = [file.readline() for file in files]
                         plines = [line.rstrip('\n').split("\t") for line in lines]
-                        estimates = np.full([nParam*2], np.nan)
-                        outfile.write('\t'.join(plines[0][0:5]) +"\t" + "\t".join([str(int) for int in list(estimates)]) +"\n" )  
-                except:   
-                    print("END of calculation")
-                    
+                        variant = plines[0][0:5]
+                        entry = np.array([Str2Int(line[5:]) for line in plines])
+                        AF_LAprop = Compute_AF_LAprop(entry, nParam)
+                        Geff = np.full([nParam], np.nan)
+                        Gpval = np.full([nParam], np.nan)
+                        LAeff = np.full([nParam - 1], np.nan)
+                        LApval = np.full([nParam - 1], np.nan)
+                        outfile.write('\t'.join(plines[0][0:5]) +"\t" + 
+                        "\t".join([str(k) for k in AF_LAprop]) + "\t" +
+                        "\t".join([str(k) for k in list(LAeff)]) +"\t" + 
+                        "\t".join([str(k) for k in list(LApval)]) + "\t" +
+                        "\t".join([str(k) for k in list(Geff)]) +"\t" + 
+                        "\t".join([str(k) for k in list(Gpval)]) + "\n" )  
 
-            
-
-
-    else:
-        print("Invalid --method input; Program terminating...")
+            except:   
+                print("END of calculation")
 
 
 
 
 
+# a function to write the header
+def WriteHeader(nParam):
+    terms = ["AF", "LAprop", "LAeff", "LApval", "Geff", "Gpval"]
+    append1 = ["_anc"+ str(k) for k in list(range(0, nParam))]
+    append2 = ["_anc"+ str(k) for k in list(range(0, nParam - 1))]
+    header = "CHROM\tPOS\tID\tREF\tALT\t"
+    for i in terms:
+        if (i == "LAeff" or i == "LApval"):
+            header = header + '\t'.join([i + j for j in append2]) + "\t"
+        else:
+            header = header + '\t'.join([i + j for j in append1]) + "\t"
+    header = header + "\n"
+    return header
 
-# a function that convert str to int
 def Str2Int(lst):
     return list(map(int, lst))
 
-# a function to write header based on number of input files
-def WriteHeader(nParam):
-    header = "CHROM\tPOS\tID\tREF\tALT\t"
-    for i in range(nParam):
-        header = header + ("ANC{0}EFF\tANC{0}P\t".format(str(i))) 
-    return(header[:-1] + "\n")
-
-# a function that returns a boolean that represents which columns to include (check singularity)
-def FindIndCol(X):
-    return (np.invert(np.all(abs(np.linalg.qr(X)[1]) < 1e-10, axis=1)))
+def Compute_AF_LAprop(entry, nParam):
+    LAcount = np.sum(entry[0:nParam, :], axis = 1)
+    Gtot = np.sum(entry[nParam:(2*nParam + 1), :], axis = 1)
+    LAtot = sum(LAcount)
+    LAprop = LAcount/LAtot
+    AF = Gtot/LAcount
+    return (AF.round(5).tolist() + LAprop.round(5).tolist() )
 
 
 if __name__ == "__main__":
@@ -221,4 +190,4 @@ if __name__ == "__main__":
     parser.add_argument("--out", help="output file for Tractor sumstats", required=True)
 
     args = parser.parse_args()
-    test_func(**vars(args))
+    run_tractor(**vars(args))

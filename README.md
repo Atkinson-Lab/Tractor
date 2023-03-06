@@ -2,7 +2,7 @@
 
 Thanks for your interest in Tractor!
 
-Please check out the Wiki page of this repo (https://github.com/eatkinson/Tractor/wiki) for more details about each step and descriptions of implementation.
+Please check out the Wiki page of this  [tutorial](https://github.com/Atkinson-Lab/Tractor-tutorial) or [repo](https://github.com/eatkinson/Tractor/wiki) for more details about each step and descriptions of implementation.
 
 The methodology and utility of Tractor is more fully described in our manuscript, "Tractor uses local ancestry to enable the inclusion of admixed individuals in GWAS and to boost power", which is was published in Nature Genetics here: https://www.nature.com/articles/s41588-020-00766-y. We ask that you cite this publication for work utilizing the Tractor software.
 

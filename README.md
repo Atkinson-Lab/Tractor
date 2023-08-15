@@ -1,4 +1,4 @@
-## The Tractor pipeline
+## The Tractor pipeline (v 0.0.1)
 
 Thanks for your interest in Tractor!
 

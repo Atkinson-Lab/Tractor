@@ -1,4 +1,5 @@
 # Tractor script to run linear regression and logistic regression
+# v 0.0.1
 __author__ = "TaotaoTan"
 
 
@@ -29,7 +30,7 @@ RunTractor.py --hapdose  <prefix of deconvoluted ancestries and risk alleles fil
 # user should make sure that the order of sample names matches
 
 def run_tractor(hapdose: str, phe: str, method: str, out:str):
-
+    print("v 0.0.1")
     # read files
     hapfiles = sorted(glob.glob(hapdose + '.*.hapcount.txt'))
     dosefiles = sorted(glob.glob(hapdose + '.*.dosage.txt'))

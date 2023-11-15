@@ -34,9 +34,9 @@ conda activate py3_tractor
 
 ## Steps for Running Tractor Locally
 
-#### PLEASE NOTE: The input for the following steps require that your genotype data be phased (VCF file) and local ancestry inferred. For an example, please refer to our [Tractor tutorial](https://atkinson-lab.github.io/Tractor-tutorial/).
-- 
-- All scripts are available in the [`scripts`](https://github.com/Atkinson-Lab/Tractor-New/tree/main/scripts) directory, and Hail implementation is present in the [`ipynbs`](https://github.com/Atkinson-Lab/Tractor-New/tree/main/ipynbs) directory
+#### IMPORTANT: Ensure your genotype data is phased (VCF file) and local ancestry is inferred for the following steps. Refer to our [Tractor tutorial](https://atkinson-lab.github.io/Tractor-tutorial/) for initial setup instructions.
+
+All scripts desribed in the following steps are available in the [`scripts`](https://github.com/Atkinson-Lab/Tractor-New/tree/main/scripts) directory, and Hail implementation is present in the [`ipynbs`](https://github.com/Atkinson-Lab/Tractor-New/tree/main/ipynbs) directory
 
 ### Optional Step: Recovering Haplotypes Disrupted by Statistical Phasing
 

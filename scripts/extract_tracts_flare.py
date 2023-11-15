@@ -8,8 +8,6 @@
 
 __author__ = "elizabeth.atkinson@bcm.edu"
 __version__ = "1.0.0"
-# Original code by Dr. Elizabeth G. Atkinson (elizabeth.atkinson@bcm.edu)
-# Modified by Nirav N. Shah (nirav.shah@bcm.edu)
 # Date: Oct 14, 2023 (v1.0.0)
 # Changelog:
 # Compatible with FLARE v0.3.0 output.

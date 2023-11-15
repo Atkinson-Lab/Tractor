@@ -1,15 +1,176 @@
-## The Tractor pipeline (v 0.0.1)
+![](images/tractor_icon.png)
 
-Thanks for your interest in Tractor!
+# TRACTOR - Local Ancestry Aware GWAS
 
-Please check out the Wiki page of this  [tutorial](https://github.com/Atkinson-Lab/Tractor-tutorial) or [repo](https://github.com/eatkinson/Tractor/wiki) for more details about each step and descriptions of implementation.
+**Current version: 1.1.0**
 
-The methodology and utility of Tractor is more fully described in our manuscript, "Tractor uses local ancestry to enable the inclusion of admixed individuals in GWAS and to boost power", which is was published in Nature Genetics here: https://www.nature.com/articles/s41588-020-00766-y. We ask that you cite this publication for work utilizing the Tractor software.
+Tractor is a specialized tool designed to enhance Genome-Wide Association Studies (GWAS) for diverse cohorts by addressing challenges associated with analyzing admixed populations. Admixed populations are often excluded from genomic studies due to concerns about how to properly account for their complex ancestry.
 
+Tractor facilitates the inclusion of admixed individuals in association studies by leveraging local ancestry, allowing for finer resolution in controlling for ancestry in GWAS, and empowering identification of ancestry-specific loci.
 
-In this repo, we provide scripts comprising the full Tractor pipeline for (1) recovering long-range haplotypes as informed by local ancestry deconvolution, (2) extracting ancestral segments and calculating ancestral minor allele dosages, and (3) running our local ancestry aware GWAS model.
+## Classic GWAS vs. TRACTOR GWAS
+Unlike traditional GWAS methods, Tractor requires local ancestry estimates in its analyses. It employs a multi-step approach involving phasing, local ancestry inference, and regression analysis with ancestral allele dosages. This method aims to improve the accuracy of association analyses in cohorts with diverse ancestries, overcoming issues such as population stratification and variable linkage disequilibrium patterns.
 
-The pipeline is currently designed assuming RFmix_v2 and phased VCF format genotype input and consists of separate scripts for maximum flexibility of use. These scripts can be run in sequence to do all the steps or, if long-range tracts will not impact the goals of the analysis, the user can skip right to ancestry dosage calculation and running our GWAS model. GWAS steps can scale to an arbitrary user-specified number of ancestries.
+## Contents
+* [Setup Conda environment](#setup-conda-environment)
+* [Steps for Running Tractor Locally](#steps-for-running-tractor-locally)
+  * [Optional Step: Recovering Haplotypes Disrupted by Statistical Phasing](#optional-step-recovering-haplotypes-disrupted-by-statistical-phasing)
+  * [Extracting Tracts and Ancestry Dosages](#extracting-tracts-and-ancestry-dosages)
+  * [Running Tractor](#running-tractor)
+* [Steps for Running Tractor on Hail](#steps-for-running-tractor-on-hail)
+* [Output Files](#output-files)
+* [License](#license)
+* [Cite this article](#cite-this-article)
 
+## Setup Conda environment
 
-**Important**: The success of Tractor relies on good local ancestry calls. Please ensure your LAI performance is highly accurate before running a Tractor GWAS.
+We recommend creating a Conda environment to run Tractor locally.
+```bash
+conda env create -f conda_py3_tractor.yml
+conda activate py3_tractor
+```
+
+[Contents](#contents)
+
+## Steps for Running Tractor Locally
+
+#### PLEASE NOTE: The input for the following steps require that your genotype data be phased (VCF file) and local ancestry inferred. For an example, please refer to our [Tractor tutorial](https://atkinson-lab.github.io/Tractor-tutorial/).
+- 
+- All scripts are available in the [`scripts`](https://github.com/Atkinson-Lab/Tractor-New/tree/main/scripts) directory, and Hail implementation is present in the [`ipynbs`](https://github.com/Atkinson-Lab/Tractor-New/tree/main/ipynbs) directory
+
+### Optional Step: Recovering Haplotypes Disrupted by Statistical Phasing
+
+Statistical phasing can lead to switch errors as described in [Fig. 1](https://www.nature.com/articles/s41588-020-00766-y/figures/1) of the Tractor publication.
+For this purpose, we have written two scripts, `unkink_2way_mspfile.py` and `unkink_2way_genofile.py`. These scripts help recover disrupted tracts from the **MSP file and VCF file**, rectifying errors, and outputs an unkinked VCF file that can be used for subsequent steps. Currently they are implemented for two-way admixed popuations only.
+- `unkink_2way_mspfile.py`
+  ```
+  --msp              Path stem to MSP file, not including ".msp.tsv". (Must end in .msp.tsv)
+  ```
+- **Output File:**
+  - The output file \*.switches.txt includes information on windows from the MSP file that needs to be switched. 
+  - This file will serve as an input to `unkink_2way_genofile.py`
+- `unkink_2way_genofile.py`
+  ```
+  --switches         Path to *.switches.txt, which includes info on windows to be switched
+  --genofile         Path stem to input VCF with phased genotypes, not including .vcf suffix
+  ```
+- **Output File:**
+  - The output file \*.unkinked.vcf will include recovered haplotypes
+
+[Contents](#contents)
+
+### Extracting Tracts and Ancestry Dosages
+
+Simultaneously extract risk allele and local ancestry information, a prerequisite for running Tractor GWAS. The scripts output risk allele by ancestry dosages and haplotype counts for the input VCF files. A file of each of these is generated for each ancestry component.
+- **Note that the input VCF file must be the phased file on which local ancestry was called.**
+- Running `extract_tracts.py` requires the **input MSP and VCF file**, and the number of ancestral populations within the VCF file. This script outputs the dosage and hapcount files required for running Tractor using `run_tractor.R`.
+  - `extract_tracts.py`:
+    ```
+    --vcf              Path to VCF file (*.vcf or *.vcf.gz)
+    --msp              Path to MSP file (*.msp or *.msp.tsv)
+    --num-ancs         Number of ancestral populations within the VCF file.
+    --output-dir       Path to the output directory (default: same as VCF file).
+                       Directory must already exist.
+    --output-vcf       Whether to output the ancestry-specific VCF file (default: False).
+    --compress-output  Compress output dosage, hapcount, and VCF files (default: False).
+    ```
+
+    **Example run for 3-way admixed dataset:**
+    ```bash
+    python3 extract_tracts.py \
+    --vcf dataset_qc_phased.vcf \
+    --msp dataset_qc_phased.msp \
+    --num-ancs 3 \
+    --output-dir ${output_dir}
+    ```
+
+- If you used **[FLARE](https://github.com/browning-lab/flare) for LAI** and there are no MSP files, use the `extract_tracts_flare.py` script instead.
+  - `extract_tracts_flare.py`:
+    ```
+    --vcf              Path to VCF file (*.vcf or *.vcf.gz)
+    --num-ancs         Number of ancestral populations within the VCF file.
+    --output-dir       Path to the output directory (default: same as VCF file).
+                       Directory must already exist.
+    --output-vcf       Whether to output the ancestry-specific VCF file (default: False).
+    --compress-output  Compress output dosage, hapcount, and VCF files (default: False).
+    ```
+
+    **Example run for 3-way admixed dataset (with FLARE LAI):**
+    ```bash
+    python3 extract_tracts_flare.py \
+    --vcf dataset_qc_phased.vcf \
+    --num-ancs 3 \
+    --output-dir ${output_dir}
+    ```
+
+- **Output Files:**
+  - Both scripts, `extract_tracts.py` and `extract_tracts_flare.py` will generate two files (`*.dosage.txt`, `*.hapcount.txt`) per ancestry.
+  - Additional ancestry-specific VCF files may be generated if `output-vcf` argument is provided. This file is not required for running Tractor, but might be needed for painting individual karyograms or personal research purposes.
+
+[Contents](#contents)
+
+### Running Tractor
+
+- The Tractor code runs in R, and all required library packages should be installed within the Conda environment.
+- Arguments:
+  ```
+  --hapdose         Prefix of hapcount and dosage files generated
+  --phe             Phenotype file; 1st column sample ID, 2nd column phenotype,
+                    other columns will be treated as covariates. Missing data is allowed.
+  --method          "linear" or "logistic"
+  --out             Output file name for ancestry-specific summary statistics
+  ```
+
+  **Example run:**
+  ```
+  ${script_path}/run_tractor.R \
+  --hapdose dataset_qc_phased \
+  --phe dataset_qc_pheno_covars.txt \
+  --method logistic \
+  --out dataset_qc_phased_sumstats
+  ```
+
+- **Output Files:**
+  - Tractor is a local-ancestry aware GWAS that offers ancestry-specific summary statistics.
+  - The number of columns would depend on the number of ancestries within the study. Here is a description of the columns of 2-way admixed dataset:
+    ```
+    CHROM:              Chromosome 
+    POS:                Position 
+    ID:                 SNP ID
+    REF:                Reference allele 
+    ALT:                Alternate allele 
+    AF_anc0:            Allele frequency for anc0; sum(dosage)/sum(local ancestry)
+    AF_anc1:            Allele frequency for anc1; sum(dosage)/sum(local ancestry)
+    LAprop_anc0:        Local ancestry proportion for anc0; sum(local ancestry)/2 * sample size
+    LAprop_anc1:        Local ancestry proportion for anc1; sum(local ancestry)/2 * sample size
+    LAeff_anc0:         Effect size for the local ancestry term (X1 term in Tractor)
+    LApval_anc0:        p value for the local ancestry term (X1 term in Tractor)
+    Geff_anc0:          Effect size for alternate alleles that are interited from anc0
+    Geff_anc1:          Effect size for alternate alleles that are interited from anc1
+    Gpval_anc0:         p value for alternate alleles that are interited from anc0
+    Gpval_anc1:         p value for alternate alleles that are interited from anc1
+    ```
+  - Gpval (Genotype p-value) columns can be used for generating ancestry-specific Manhattan plots.
+
+[Contents](#contents)
+
+## Steps for Running Tractor on Hail
+- Hail implementation of the pipeline is described in [`hail_example_tractor_gwas.ipynb`](https://github.com/Atkinson-Lab/Tractor-New/blob/main/ipynbs/hail_example_tractor_gwas.ipynb).
+
+[Contents](#contents)
+
+## License
+The Tractor program is licensed under the MIT License. You may obtain a copy of the License [here](https://github.com/Atkinson-Lab/Tractor-New/blob/main/LICENSE).
+
+[Contents](#contents)
+
+## Cite this article
+
+The methodology and utility of Tractor are more fully described in our manuscript. If you use Tractor in your research, please cite the following article:
+
+> Atkinson, E.G., Maihofer, A.X., Kanai, M. et al. Tractor uses local ancestry to enable the inclusion of admixed individuals in GWAS and to boost power. Nat Genet 53, 195–204 (2021). [Link](https://doi.org/10.1038/s41588-020-00766-y)
+
+For any inquiries, you can contact Elizabeth G. Atkinson at [elizabeth.atkinson@bcm.edu](mailto:elizabeth.atkinson@bcm.edu).
+
+[Contents](#contents)
+

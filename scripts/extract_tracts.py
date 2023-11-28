@@ -4,7 +4,7 @@
 # in the *.msp file and phased genotypic data in *.vcf (or *.vcf.gz) file.
 
 __author__ = "elizabeth.atkinson@bcm.edu"
-__version__ = "1.1.0"
+__version__ = "1.1.1"
 # Original code by Dr. Elizabeth G. Atkinson (elizabeth.atkinson@bcm.edu)
 # Modified Date: Oct 14, 2023 (v1.1.0)
 # Changelog:
@@ -16,6 +16,8 @@ import argparse
 import contextlib
 import gzip
 import logging
+import re
+import os
 
 logging.basicConfig(format="%(levelname)s (%(name)s %(lineno)s): %(message)s")
 logger = logging.getLogger(__name__)

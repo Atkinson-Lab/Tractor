@@ -105,4 +105,4 @@ dependencies:
   - xorg-xproto=7.0.31=h7f98852_1007
   - xz=5.2.6=h166bdaf_0
   - zlib=1.2.13=hd590300_5
-  - zstd=1.5.5=hf
+  - zstd=1.5.5

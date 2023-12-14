@@ -4,7 +4,7 @@
 # in the *.msp file and phased genotypic data in *.vcf (or *.vcf.gz) file.
 
 __author__ = "elizabeth.atkinson@bcm.edu"
-__version__ = "1.1.1"
+__version__ = "1.1.2"
 # Original code by Dr. Elizabeth G. Atkinson (elizabeth.atkinson@bcm.edu)
 # Modified Date: Oct 14, 2023 (v1.1.0)
 # Changelog:
@@ -93,7 +93,9 @@ def extract_tracts(vcf=str, msp=str, num_ancs=int, output_dir=None, output_vcf=N
     logger.info("# Number of Ancestries in VCF : %d", num_ancs)
     logger.info("# Output Directory            : %s", output_dir)
 
+    output_files = {}
     output_path = f"{os.path.join(output_dir, vcf_prefix) if output_dir else vcf_prefix}"
+    
     file_extension = f"{'.gz' if compress_output else ''}"
 
     # Output files: vcf, dosage, haplotype count per passed ancestry
@@ -176,7 +178,7 @@ def extract_tracts(vcf=str, msp=str, num_ancs=int, output_dir=None, output_vcf=N
 
                 # index by the number of individuals in the VCF file, should be half the number in the calls file
                 for i, geno in enumerate(genos):
-                    geno = geno.split(":")[0].split("|")  # assert incase eagle leaves some genos unphased
+                    geno_parts = geno.split(":")[0].split("|")  # assert incase eagle leaves some genos unphased
                     geno_a,geno_b = map(str, geno_parts[:2])
                     call_a = str(calls[2*i])
                     call_b = str(calls[2*i + 1])

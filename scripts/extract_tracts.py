@@ -101,8 +101,8 @@ def extract_tracts(vcf=str, msp=str, num_ancs=int, output_dir=None, output_vcf=N
     # Output files: vcf, dosage, haplotype count per passed ancestry
     logger.info("Creating output files for %d ancestries", num_ancs)
     for i in range(num_ancs):
-        output_files[f"dos{i}"] = f"{output_path}anc{i}.dosage.txt{file_extension}"
-        output_files[f"ancdos{i}"] = f"{output_path}anc{i}.hapcount.txt{file_extension}"
+        output_files[f"dos{i}"] = f"{output_path}.anc{i}.dosage.txt{file_extension}"
+        output_files[f"ancdos{i}"] = f"{output_path}.anc{i}.hapcount.txt{file_extension}"
         if output_vcf:
             output_files[f"vcf{i}"] = f"{output_path}.anc{i}.vcf{file_extension}"
 

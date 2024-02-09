@@ -46,7 +46,13 @@ if (is.null(opt$hapdose)){
 
 ####### helper function
 subset_mat_NA = function(rows, mat){
-  t(sapply(rows, function(row, mat){if (row %in% row.names(mat)){return(mat[row,])}else{return(rep(NA, ncol(mat)))}},mat))
+  if (nrow(mat) == 1){
+    matrix(data = NA, nrow = length(rows), ncol = 2, 
+           dimnames = list(rows, c()))
+  } else {
+    mat = mat[,c(1,4)]
+    t(sapply(rows, function(row, mat){if (row %in% row.names(mat)){return(mat[row,])}else{return(rep(NA, ncol(mat)))}},mat))
+  }
 }
 
 ###########
@@ -122,7 +128,7 @@ RunTractor <- function(prefix, phefile, method, outfile){
           coefs = summary(lm(y ~ LAG_))$coefficients
         }
       
-        reg_res = subset_mat_NA(coef_rownames, coefs[,c(1,4)])
+        reg_res = subset_mat_NA(coef_rownames, coefs)
         LAeff = as.numeric(reg_res[LA_rownames,1])
         LApval = as.numeric(reg_res[LA_rownames,2])
         Geff = as.numeric(reg_res[G_rownames,1])
@@ -138,7 +144,7 @@ RunTractor <- function(prefix, phefile, method, outfile){
           coefs = summary(model)$coefficients
         }
       
-        reg_res = subset_mat_NA(coef_rownames, coefs[,c(1,4)])
+        reg_res = subset_mat_NA(coef_rownames, coefs)
         if (model$converged == TRUE){
           LAeff = as.numeric(reg_res[LA_rownames,1])
           LApval = as.numeric(reg_res[LA_rownames,2])

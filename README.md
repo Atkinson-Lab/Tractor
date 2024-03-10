@@ -34,9 +34,9 @@ conda activate py3_tractor
 
 ## Steps for Running Tractor Locally
 
-#### IMPORTANT: Ensure your genotype data is phased (VCF file) and local ancestry is inferred for the following steps. Refer to our [Tractor tutorial](https://atkinson-lab.github.io/Tractor-tutorial/) for initial setup instructions.
-
-All scripts desribed in the following steps are available in the [`scripts`](https://github.com/Atkinson-Lab/Tractor-New/tree/main/scripts) directory, and Hail implementation is present in the [`ipynbs`](https://github.com/Atkinson-Lab/Tractor-New/tree/main/ipynbs) directory
+#### PLEASE NOTE: The input for the following steps require that your genotype data be phased (VCF file) and local ancestry inferred. For an example, please refer to our [Tractor tutorial](https://atkinson-lab.github.io/Tractor-tutorial/).
+- 
+- All scripts are available in the [`scripts`](https://github.com/Atkinson-Lab/Tractor-New/tree/main/scripts) directory, and Hail implementation is present in the [`ipynbs`](https://github.com/Atkinson-Lab/Tractor-New/tree/main/ipynbs) directory
 
 ### Optional Step: Recovering Haplotypes Disrupted by Statistical Phasing
 
@@ -63,33 +63,49 @@ For this purpose, we have written two scripts, `unkink_2way_mspfile.py` and `unk
 
 Simultaneously extract risk allele and local ancestry information, a prerequisite for running Tractor GWAS. The scripts output risk allele by ancestry dosages and haplotype counts for the input VCF files. A file of each of these is generated for each ancestry component.
 - **Note that the input VCF file must be the phased file on which local ancestry was called.**
-- Running `ExtractTracts.py` requires the **input MSP and VCF file**, and the number of ancestral populations within the VCF file. This script outputs the dosage and hapcount files required for running Tractor using `run_tractor.R`.
-  - `ExtractTracts.py`:
+- Running `extract_tracts.py` requires the **input MSP and VCF file**, and the number of ancestral populations within the VCF file. This script outputs the dosage and hapcount files required for running Tractor using `run_tractor.R`.
+  - `extract_tracts.py`:
     ```
-    --msp              Path stem to MSP file (do not include *.msp.tsv suffix)
-    --vcf-prefix       Path stem to input VCF file with phased genotypes (do not include *.vcf or
-                       *.vcf.gz suffix. If zipped, used --zipped argument)
-    --num-ancs         Number of ancestral populations within the VCF/MSP file.
-    --zipped           If input VCF file is gzipped
-    --zip-output       If all output files need to be Gzip compressed. (not BGZF-compression, recommended for very large files)
-    --output-path      Optional output path for files and file prefix, e.g. ~/test_data/test1
+    --vcf              Path to VCF file (*.vcf or *.vcf.gz)
+    --msp              Path to MSP file (*.msp or *.msp.tsv)
+    --num-ancs         Number of ancestral populations within the VCF file.
+    --output-dir       Path to the output directory (default: same as VCF file).
+                       Directory must already exist.
+    --output-vcf       Whether to output the ancestry-specific VCF file (default: False).
+    --compress-output  Compress output dosage, hapcount, and VCF files (default: False).
     ```
 
     **Example run for 3-way admixed dataset:**
-    - If `dataset_qc_phased.msp.tsv` and `dataset_qc_phased.vcf` exists, we can run the following --
     ```bash
-    python3 ExtractTracts.py \
-    --msp dataset_qc_phased \
-    --vcf-prefix dataset_qc_phased \
+    python3 extract_tracts.py \
+    --vcf dataset_qc_phased.vcf \
+    --msp dataset_qc_phased.msp \
     --num-ancs 3 \
-    --output-path ${output_dir}/output_prefix
+    --output-dir ${output_dir}
     ```
-    - Note: With some LAI algorithms, `*.msp` file is generated. In this case, please create a symbolic link to `*.msp.tsv` as the `ExtractTracts.py` expects MSP files to have `*.msp.tsv` suffix.
 
-- If you used **[FLARE](https://github.com/browning-lab/flare) for LAI** and there are no MSP files, please await update as we are working towards a script that will help extract the necessary dosage and haplotype count files from FLARE VCF output.
+- If you used **[FLARE](https://github.com/browning-lab/flare) for LAI** and there are no MSP files, use the `extract_tracts_flare.py` script instead.
+  - `extract_tracts_flare.py`:
+    ```
+    --vcf              Path to VCF file (*.vcf or *.vcf.gz)
+    --num-ancs         Number of ancestral populations within the VCF file.
+    --output-dir       Path to the output directory (default: same as VCF file).
+                       Directory must already exist.
+    --output-vcf       Whether to output the ancestry-specific VCF file (default: False).
+    --compress-output  Compress output dosage, hapcount, and VCF files (default: False).
+    ```
+
+    **Example run for 3-way admixed dataset (with FLARE LAI):**
+    ```bash
+    python3 extract_tracts_flare.py \
+    --vcf dataset_qc_phased.vcf \
+    --num-ancs 3 \
+    --output-dir ${output_dir}
+    ```
 
 - **Output Files:**
-  - `ExtractTracts.py` will generate two files (`*.dosage.txt`, `*.hapcount.txt`) per ancestry.
+  - Both scripts, `extract_tracts.py` and `extract_tracts_flare.py` will generate two files (`*.dosage.txt`, `*.hapcount.txt`) per ancestry.
+  - Additional ancestry-specific VCF files may be generated if `output-vcf` argument is provided. This file is not required for running Tractor, but might be needed for painting individual karyograms or personal research purposes.
 
 [Contents](#contents)
 
@@ -157,5 +173,4 @@ The methodology and utility of Tractor are more fully described in our manuscrip
 For any inquiries, you can contact Elizabeth G. Atkinson at [elizabeth.atkinson@bcm.edu](mailto:elizabeth.atkinson@bcm.edu).
 
 [Contents](#contents)
-
 

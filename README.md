@@ -106,6 +106,7 @@ Simultaneously extract risk allele and local ancestry information, a prerequisit
 - **Output Files:**
   - Both scripts, `extract_tracts.py` and `extract_tracts_flare.py` will generate two files (`*.dosage.txt`, `*.hapcount.txt`) per ancestry.
   - Additional ancestry-specific VCF files may be generated if `output-vcf` argument is provided. This file is not required for running Tractor, but might be needed for painting individual karyograms or personal research purposes.
+  - If files are compressed using the option `--compress-output`, they will undergo standard GZ compression, not BGZF compression (as expected by bcftools)
 
 [Contents](#contents)
 

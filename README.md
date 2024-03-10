@@ -34,9 +34,9 @@ conda activate py3_tractor
 
 ## Steps for Running Tractor Locally
 
-#### PLEASE NOTE: The input for the following steps require that your genotype data be phased (VCF file) and local ancestry inferred. For an example, please refer to our [Tractor tutorial](https://atkinson-lab.github.io/Tractor-tutorial/).
-- 
-- All scripts are available in the [`scripts`](https://github.com/Atkinson-Lab/Tractor-New/tree/main/scripts) directory, and Hail implementation is present in the [`ipynbs`](https://github.com/Atkinson-Lab/Tractor-New/tree/main/ipynbs) directory
+#### IMPORTANT: Ensure your genotype data is phased (VCF file) and local ancestry is inferred for the following steps. Refer to our [Tractor tutorial](https://atkinson-lab.github.io/Tractor-tutorial/) for initial setup instructions.
+
+All scripts desribed in the following steps are available in the [`scripts`](https://github.com/Atkinson-Lab/Tractor-New/tree/main/scripts) directory, and Hail implementation is present in the [`ipynbs`](https://github.com/Atkinson-Lab/Tractor-New/tree/main/ipynbs) directory
 
 ### Optional Step: Recovering Haplotypes Disrupted by Statistical Phasing
 
@@ -105,7 +105,7 @@ Simultaneously extract risk allele and local ancestry information, a prerequisit
 
 - **Output Files:**
   - Both scripts, `extract_tracts.py` and `extract_tracts_flare.py` will generate two files (`*.dosage.txt`, `*.hapcount.txt`) per ancestry.
-  - Additional ancestry-specific VCF files may be generated if `output-vcf` argument is provided. This file is not required for running Tractor, but might be needed for painting individual karyograms or personal research purposes.
+  - Additional ancestry-specific VCF files may be generated if `--output-vcf` argument is provided. This file is not required for running Tractor, but might be needed for painting ancestry-specific individual karyograms for personal research purposes.
   - If files are compressed using the option `--compress-output`, they will undergo standard GZ compression, not BGZF compression (as expected by bcftools)
 
 [Contents](#contents)

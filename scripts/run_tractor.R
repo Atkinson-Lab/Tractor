@@ -57,8 +57,15 @@ subset_mat_NA = function(rows, mat){
 
 ###########
 RunTractor <- function(prefix, phefile, method, outfile){
+  zipped = FALSE
   hapFiles = Sys.glob(paste0(prefix, ".*.hapcount.txt"))
   doseFiles = Sys.glob(paste0(prefix, ".*.dosage.txt"))
+  # if no files found, try gzipped files
+  if((length(hapFiles) == 0) && (length(doseFiles) == 0)) {
+    hapFiles = Sys.glob(paste0(prefix, ".*.hapcount.txt.gz"))
+    doseFiles = Sys.glob(paste0(prefix, ".*.dosage.txt.gz"))
+    zipped = TRUE
+  }
   inFiles = c(hapFiles, doseFiles)
   nAnc = length(doseFiles)
   phe = read.csv(phefile, sep = "\t", header = T)
@@ -81,8 +88,11 @@ RunTractor <- function(prefix, phefile, method, outfile){
   LAcolnames = paste0("LA", 0:(nAnc-1))
   Gcolnames = paste0("G", 0:(nAnc-1))
 
-  
-  data = lapply(inFiles,function(file){readLines(file)})
+  if (zipped){
+    data = lapply(inFiles,function(file){readLines(gzfile(file))})
+  } else {
+    data = lapply(inFiles,function(file){readLines(file)})
+  }
   nSNP = length(data[[1]]) - 1
   
   hap0ID = unlist(strsplit(data[[1]][1], "\t"))

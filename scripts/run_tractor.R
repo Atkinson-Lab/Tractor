@@ -50,7 +50,7 @@ subset_mat_NA = function(rows, mat){
     matrix(data = NA, nrow = length(rows), ncol = 2, 
            dimnames = list(rows, c()))
   } else {
-    mat = mat[,c(1,4)]
+    mat = mat[,c(1,2,4)]
     t(sapply(rows, function(row, mat){if (row %in% row.names(mat)){return(mat[row,])}else{return(rep(NA, ncol(mat)))}},mat))
   }
 }
@@ -91,12 +91,15 @@ RunTractor <- function(prefix, phefile, method, outfile){
   }
   
   
-  resDF = setNames(data.frame(matrix(data = NA, nrow = 0, ncol = (5 +  4 * nAnc + 2 * (nAnc - 1)))),
-                   c("CHR", "POS", "ID", "REF", "ALT",                                                                                             paste0("AF_anc",0:(nAnc-1)),
+  resDF = setNames(data.frame(matrix(data = NA, nrow = 0, ncol = (5 +  5 * nAnc + 3 * (nAnc - 1)))),
+                   c("CHR", "POS", "ID", "REF", "ALT",
+                     paste0("AF_anc",0:(nAnc-1)),
                      paste0("LAprop_anc",0:(nAnc-1)),
                      paste0("LAeff_anc",0:(nAnc-2)),
+                     paste0("LAstderr_anc",0:(nAnc-2)),
                      paste0("LApval_anc",0:(nAnc-2)),
                      paste0("Geff_anc",0:(nAnc-1)),
+                     paste0("Gstderr_anc",0:(nAnc-1)),
                      paste0("Gpval_anc",0:(nAnc-1))))
   write.table(resDF, outfile,  quote = F, row.names = F, sep = "\t")
   
@@ -130,9 +133,11 @@ RunTractor <- function(prefix, phefile, method, outfile){
       
         reg_res = subset_mat_NA(coef_rownames, coefs)
         LAeff = as.numeric(reg_res[LA_rownames,1])
-        LApval = as.numeric(reg_res[LA_rownames,2])
+        LAstderr = as.numeric(reg_res[LA_rownames,2])
+        LApval = as.numeric(reg_res[LA_rownames,3])
         Geff = as.numeric(reg_res[G_rownames,1])
-        Gpval = as.numeric(reg_res[G_rownames,2])
+        Gstderr = as.numeric(reg_res[G_rownames,2])
+        Gpval = as.numeric(reg_res[G_rownames,3])
         
         
     } else if (method == "logistic"){
@@ -147,14 +152,18 @@ RunTractor <- function(prefix, phefile, method, outfile){
         reg_res = subset_mat_NA(coef_rownames, coefs)
         if (model$converged == TRUE){
           LAeff = as.numeric(reg_res[LA_rownames,1])
-          LApval = as.numeric(reg_res[LA_rownames,2])
+          LAstderr = as.numeric(reg_res[LA_rownames,2])
+          LApval = as.numeric(reg_res[LA_rownames,3])
           Geff = as.numeric(reg_res[G_rownames,1])
-          Gpval = as.numeric(reg_res[G_rownames,2])
+          Gstderr = as.numeric(reg_res[G_rownames,2])
+          Gpval = as.numeric(reg_res[G_rownames,3])
         } else {
           # if glm doesn't converge, set effect size and P value as NA
           LAeff = rep(NA, length(LA_rownames))
+          LAstderr = rep(NA, length(LA_rownames))
           LApval = rep(NA, length(LA_rownames))
           Geff = rep(NA, length(G_rownames))
+          Gstderr = rep(NA, length(G_rownames))
           Gpval = rep(NA, length(G_rownames))
         }
     }
@@ -164,8 +173,10 @@ RunTractor <- function(prefix, phefile, method, outfile){
     resDF[1, paste0("AF_anc",0:(nAnc-1))] = round(AF,6)
     resDF[1, paste0("LAprop_anc",0:(nAnc-1))] = round(LAprop,6)
     resDF[1, paste0("LAeff_anc",0:(nAnc-2))] = round(LAeff, 6)
+    resDF[1, paste0("LAstderr_anc",0:(nAnc-2))] = round(LAstderr,6)
     resDF[1, paste0("LApval_anc",0:(nAnc-2))] = LApval
     resDF[1, paste0("Geff_anc",0:(nAnc-1))] = round(Geff,6)
+    resDF[1, paste0("Gstderr_anc",0:(nAnc-1))] = round(Gstderr,6)
     resDF[1, paste0("Gpval_anc",0:(nAnc-1))] = Gpval
     
     write.table(resDF,  outfile, quote = F, row.names = F, col.names = F, append = T, sep = "\t")

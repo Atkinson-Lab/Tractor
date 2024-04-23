@@ -123,7 +123,7 @@ RunTractor <- function(prefix, phefile, method, outfile, write_fun){
                      paste0("LApval_anc",0:(nAnc-2)),
                      paste0("Geff_anc",0:(nAnc-1)),
                      paste0("Gpval_anc",0:(nAnc-1))))
-  write_fun(resDF, outfile, quote = F, row.names = F, sep = "\t")
+  write_fun(resDF, na = "NA", outfile, quote = F, row.names = F, sep = "\t")
 
   for (i in 1:nSNP){
     # matrix of Local Ancestry and Genotype
@@ -193,7 +193,7 @@ RunTractor <- function(prefix, phefile, method, outfile, write_fun){
     resDF[1, paste0("Geff_anc",0:(nAnc-1))] = round(Geff,6)
     resDF[1, paste0("Gpval_anc",0:(nAnc-1))] = Gpval
     
-    write_fun(resDF, outfile, quote = F, row.names = F, col.names = F, append = T, sep = "\t")
+    write_fun(resDF, na = "NA", outfile, quote = F, row.names = F, col.names = F, append = T, sep = "\t")
   }
   
 }

@@ -21,12 +21,27 @@ option_list = list(
   make_option(c("--method"), type="character", default=NULL, 
               help="Either <linear> or <logistic>", metavar="character"),
   make_option(c("--out"), type="character", default=NULL, 
-              help="Summary statistics file name", metavar="character")
+              help="Summary statistics file name", metavar="character"),
+  make_option(c("--compress"), action="store_true", type="logical", default=FALSE, 
+              help="Gzip the output file using data.table::fwrite")
 )
 
 opt_parser = OptionParser(option_list=option_list)
 opt = parse_args(opt_parser)
 
+if (opt$compress){
+  # to compress & append, we cannot use base R write.table
+  if (!requireNamespace("data.table", quietly = TRUE)){
+    stop("data.table package is required for compression", call.=FALSE)
+  }
+  # if output is compressed, make sure the outfile ends with .gz
+  if (!grepl(".gz$", opt$out)){
+    opt$out = paste0(opt$out, ".gz")
+  }
+  write_fun <- data.table::fwrite
+} else {
+  write_fun <- write.table
+}
 
 
 if (is.null(opt$hapdose)){
@@ -56,7 +71,7 @@ subset_mat_NA = function(rows, mat){
 }
 
 ###########
-RunTractor <- function(prefix, phefile, method, outfile){
+RunTractor <- function(prefix, phefile, method, outfile, write_fun){
   zipped = FALSE
   hapFiles = Sys.glob(paste0(prefix, ".*.hapcount.txt"))
   doseFiles = Sys.glob(paste0(prefix, ".*.dosage.txt"))
@@ -108,8 +123,8 @@ RunTractor <- function(prefix, phefile, method, outfile){
                      paste0("LApval_anc",0:(nAnc-2)),
                      paste0("Geff_anc",0:(nAnc-1)),
                      paste0("Gpval_anc",0:(nAnc-1))))
-  write.table(resDF, outfile,  quote = F, row.names = F, sep = "\t")
-  
+  write_fun(resDF, outfile, quote = F, row.names = F, sep = "\t")
+
   for (i in 1:nSNP){
     # matrix of Local Ancestry and Genotype
     LAG_ = matrix(unlist(lapply(data, function(file){
@@ -178,10 +193,9 @@ RunTractor <- function(prefix, phefile, method, outfile){
     resDF[1, paste0("Geff_anc",0:(nAnc-1))] = round(Geff,6)
     resDF[1, paste0("Gpval_anc",0:(nAnc-1))] = Gpval
     
-    write.table(resDF,  outfile, quote = F, row.names = F, col.names = F, append = T, sep = "\t")
+    write_fun(resDF, outfile, quote = F, row.names = F, col.names = F, append = T, sep = "\t")
   }
   
 }
 
-RunTractor(prefix = opt$hapdose, phefile = opt$phe, method = opt$method, outfile = opt$out)
-
+RunTractor(prefix = opt$hapdose, phefile = opt$phe, method = opt$method, outfile = opt$out, write_fun = write_fun)

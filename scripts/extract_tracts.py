@@ -101,7 +101,7 @@ def extract_tracts(vcf=str, msp=str, num_ancs=int, output_dir=None, output_vcf=N
     logger.info("# Output Directory            : %s", output_dir)
 
     output_files = {}
-    output_path = f"{os.path.join(output_dir, vcf_prefix) if output_dir else vcf_prefix}"
+    output_path = f"{os.path.join(output_dir, vcf_prefix) if output_dir else os.path.join(vcf_path, vcf_prefix)}"
 
     file_extension = f"{'.gz' if compress_output else ''}"
 

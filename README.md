@@ -1,11 +1,11 @@
 ![](images/tractor_icon.png)
 
-## NEW!!! Current Version: v1.4.0 (released May 10, 2024)
+## NEW!!! Current Version: v1.4.1 (May 2024)
 - Added support for compressed (gz) hapcount/dosage and phenotype files.
 - Improved file reading efficiency by implementing fread in chunks, mitigating memory errors.
 - Implemented parallel processing for regression, resulting in significant speed improvements with multi-core systems.
 - Enhanced flexibility in organizing phenotype files:
-   - Users can specify sample ID column (`--sampleidcol`), phenotype ID column (`--phenocol`), and covariate column list (`--covarcollist`)
+   - Users can specify sample ID column (`--sampleidcol`), phenotype ID column (`--phenocol`), and covariate column list (`--covarcollist` & `--catcovarcollist`)
 - Updated output summary statistics to include SE and t-val, with column names adjusted to adhere to GWAS standards.
 
 # TRACTOR - Local Ancestry Aware GWAS
@@ -133,42 +133,47 @@ install.packages('doParallel')
 
 **Arguments:**
 ```
---hapdose       [Mandatory] Prefix for hapcount and dosage files.
-                    E.g. If you have the following files:
-                         filename.anc0.dosage.txt filename.anc0.hapcount.txt
-                         filename.anc1.dosage.txt filename.anc1.hapcount.txt
-                    use "--hapdose filename".
---phenofile     [Mandatory] Path to the file containing phenotype and covariate data. 
-                    Default assumptions: Sample ID column: "IID" or "#IID", Phenotype column: "y".
-                    If different column names are used, refer to --sampleidcol and --phenocol arguments.
-                    All covariates MUST be included using --covarcollist.
---covarcollist  [Mandatory] Specify column names of covariates in the --phenofile.
-                    Only listed columns will be included as covariates.
-                    Separate multiple covariates with commas.
-                    E.g. --covarcollist age,sex,PC1,PC2.
-                    To exclude covariates, specify "--covarcollist none".
---method        [Mandatory] Specify the method to be used: <linear> or <logistic>.
---output        [Mandatory] File name for summary statistics output.
-                    E.g. /path/to/file/output_sumstats.txt
+--hapdose           [Mandatory] Prefix for hapcount and dosage files.
+                        E.g. If you have the following files:
+                            filename.anc0.dosage.txt filename.anc0.hapcount.txt
+                            filename.anc1.dosage.txt filename.anc1.hapcount.txt
+                        use "--hapdose filename".
+--phenofile         [Mandatory] Path to the file containing phenotype and covariate data. 
+                        Default assumptions: Sample ID column: "IID" or "#IID", Phenotype column: "y".
+                        If different column names are used, refer to --sampleidcol and --phenocol arguments.
+                        All covariates MUST be included using --covarcollist.
+--covarcollist      [Mandatory] Specify column names of covariates in the --phenofile.
+                        Only listed columns will be included as covariates.
+                        Separate multiple covariates with commas.
+                        E.g. --covarcollist age,sex,PC1,PC2.
+                        To exclude covariates, specify "--covarcollist none".
+                        To denote any of these covariates as categorical, refer to the --catcovarcollist argument.                
+--method            [Mandatory] Specify the method to be used: <linear> or <logistic>.
+--output            [Mandatory] File name for summary statistics output.
+                        E.g. /path/to/file/output_sumstats.txt
 
---sampleidcol   [Optional] Specify sample ID column name in the --phenofile.
-                    Default: "IID" or "#IID"
---phenocol      [Optional] Specify phenotype column name in the --phenofile.
-                    Default: "y"
---chunksize     [Optional] Number of rows to read at once from hapcount and dosage files.
-                    Use smaller values for lower memory usage.
-                    Note: Higher chunksize speeds up streaming but requires more memory.
-                    If out-of-memory errors occur, try increasing memory or
-                    reducing --chunksize or --nthreads.
-                    Default: 10000
---nthreads      [Optional] Specify number of threads to use.
-                    Increasing threads can speed up processing but may increase memory usage.
-                    Default: 1
---totallines    [Optional] Specify total number of lines in hapcount/dosage files (wc -l *.hapcount.txt).
-                    If not provided, it will be calculated internally (recommended).
-                    Exercise caution: if --totallines is smaller than the actual lines in the files, 
-                    only a subset of data will be analyzed. If larger than the actual lines in the files,
-                    an error will occur. Both scenarios are discouraged.
+--catcovarcollist   [Optional] Specify column names of categorical covariates in --covarcollist.
+                        Separate multiple covariates with commas.
+                        E.g. --catcovarlist sex.
+                        If all covariates specified in --covarcollist are numeric, ignore this argument.
+--sampleidcol       [Optional] Specify sample ID column name in the --phenofile.
+                        Default: "IID" or "#IID"
+--phenocol          [Optional] Specify phenotype column name in the --phenofile.
+                        Default: "y"
+--chunksize         [Optional] Number of rows to read at once from hapcount and dosage files.
+                        Use smaller values for lower memory usage.
+                        Note: Higher chunksize speeds up streaming but requires more memory.
+                        If out-of-memory errors occur, try increasing memory or
+                        reducing --chunksize or --nthreads.
+                        Default: 10000
+--nthreads          [Optional] Specify number of threads to use.
+                        Increasing threads can speed up processing but may increase memory usage.
+                        Default: 1
+--totallines        [Optional] Specify total number of lines in hapcount/dosage files (wc -l *.hapcount.txt).
+                        If not provided, it will be calculated internally (recommended).
+                        Exercise caution: if --totallines is smaller than the actual lines in the files, 
+                        only a subset of data will be analyzed. If larger than the actual lines in the files,
+                        an error will occur. Both scenarios are discouraged.
 ```
 
 **Example Run (with Mandatory Arguments)**
@@ -189,6 +194,7 @@ run_tractor.R \
 
 - In real-world scenarios, datasets may vary in size and default assumptions may not apply. Tractor accommodates these scenarios with optional arguments.
 - Assuming a phenotype file with columns: PC1, PC2, PC3, PC4, PC5, age, sex, pheno1, pheno2, pheno3, sample_id, users can perform GWAS across different phenotypes.
+- Covariates like sex can be coded as numeric, but should be treated as categorical in the model. For covariates like sex, users can denote as categorical.
 - Below is an example to run Tractor GWAS for the **pheno1** phenotype:
 ```
 run_tractor.R \
@@ -197,6 +203,7 @@ run_tractor.R \
 --covarcollist age,sex,PC1,PC2,PC3,PC4,PC5 \
 --method linear \
 --output /path/to/results/test1.txt \
+--catcovarcollist sex \
 --sampleidcol sample_id \
 --phenocol pheno1
 ```
@@ -211,6 +218,7 @@ run_tractor.R \
 --covarcollist age,sex,PC1,PC2,PC3,PC4,PC5 \
 --method linear \
 --output /path/to/results/test1.txt \
+--catcovarcollist sex \
 --sampleidcol sample_id \
 --phenocol pheno1 \
 --chunksize 15000 \

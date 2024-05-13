@@ -1,10 +1,17 @@
 #!/usr/bin/env Rscript
 
-# version: 1.4.0
-script_version <- "1.4.0"
+# version: 1.4.1
+script_version <- "1.4.1"
 cat(paste("Tractor Script Version :", script_version), "\n")
 
 # Changelog
+
+## v1.4.1  -  2024-05-13 (Categorical Covariates & Logging)
+### - Added support for categorical covariates using the --covarcollist argument.
+### - Removed `dplyr` join messages printed to the console.
+### - Log 'Analysis samples' count based on samples with phenotype data.
+###     - Sometimes samples in the hapcount/dosage files will be missing from the phenotype file.
+###     - glm/lm will not use any samples with missing phenotype data.
 
 ## v1.4.0  -  2024-05-10 (Enhanced File Handling, Performance Improvement)
 ### - Added support for compressed (gz) hapcount/dosage and phenotype files.
@@ -40,12 +47,18 @@ option_list = list(
               help="[Mandatory] Specify column names of covariates in the --phenofile.
                 Only listed columns will be included as covariates. Separate multiple covariates with commas.
                 E.g. --covarcollist age,sex,PC1,PC2.
-                To exclude covariates, specify \"--covarcollist none\"."),
+                To exclude covariates, specify \"--covarcollist none\".
+                To denote any of these covariates as categorical, refer to the --catcovarcollist argument."),
   make_option(c("--method"), type="character", default=NULL, metavar="character",
               help="[Mandatory] Specify the method to be used: <linear> or <logistic>."),
   make_option(c("--output"), type="character", default=NULL, metavar="character",
               help="[Mandatory] File name for summary statistics output.
                 E.g. /path/to/file/output_sumstats.txt"),
+  make_option(c("--catcovarcollist"), type="character", default=NULL, metavar="character",
+              help="[Optional] Specify column names of categorical covariates in --covarcollist.
+                Separate multiple covariates with commas.
+                E.g. --catcovarlist sex.
+                If all covariates specified in --covarcollist are numeric, ignore this argument."),
   make_option(c("--sampleidcol"), type="character", default=NULL,metavar="character",
               help="[Optional] Specify sample ID column name in the --phenofile.
                 Default: \"IID\" or \"#IID\""),
@@ -132,7 +145,7 @@ extract_model_info <- function(model, coef_rownames, LA_rownames, G_rownames) {
   ))
 }
 
-RunTractor <- function(prefix, phenofile, sampleidcol, phenocol, covarcollist, chunksize, totallines, method, outfile, nthreads) {
+RunTractor <- function(prefix, phenofile, sampleidcol, phenocol, covarcollist, catcovarcollist, chunksize, totallines, method, outfile, nthreads) {
   
   hapFiles = Sys.glob(paste0(prefix, ".*.hapcount.txt*"))
   doseFiles = Sys.glob(paste0(prefix, ".*.dosage.txt*"))
@@ -201,6 +214,17 @@ RunTractor <- function(prefix, phenofile, sampleidcol, phenocol, covarcollist, c
     cat("Covariates used        :", covars, "\n")
   } else {
     cat("Covariates used        : NO COVARIATES USED. If you wish to use covariates, please use the --covarcollist argument.\n")
+  }
+  if (!is.null(catcovarcollist)) {
+    catcovars <- strsplit(catcovarcollist,",")[[1]]
+    for (i in c(catcovars)) {
+      if (!(i %in% covars)) {
+        stop("Error: Categorical Covariate: ", i, " must also be in the --covarcollist argument.\n")
+      }
+    }
+    cat("Categorical Covariates :", catcovarcollist, "\n")
+  } else {
+    cat("Categorical Covariates : NONE\n")
   }
   
   cat("Total hapcount/dosage files identified  :", length(inFiles), "\n")
@@ -271,7 +295,7 @@ RunTractor <- function(prefix, phenofile, sampleidcol, phenocol, covarcollist, c
       df_phe$IID <- as.character(df_phe$IID)
       
       # Samples present in phenotype file but not in hapcount/dosage files
-      excluded_samples <- anti_join(df_phe, sampleID_hapdos) %>% select("IID")
+      excluded_samples <- anti_join(df_phe, sampleID_hapdos, by = join_by(IID)) %>% select("IID")
       path_to_excluded_samples <- file.path(dirname(outfile),"samples_excluded_from_phenotype.txt")
       if (nrow(excluded_samples) > 0) {
         fwrite(excluded_samples, path_to_excluded_samples,
@@ -281,11 +305,12 @@ RunTractor <- function(prefix, phenofile, sampleidcol, phenocol, covarcollist, c
       }
       
       # Left join to rearrange phenotype file to match order of sample IDs in hapcount/dosage files
-      df_phe <- left_join(sampleID_hapdos, df_phe)
+      df_phe <- left_join(sampleID_hapdos, df_phe, by = join_by(IID))
       ID <- df_phe$IID
       y <- df_phe$y
       
       cat("Total samples          :", nrow(df_phe),"(from hapcount/dosage files)\n")
+      cat("Analysis samples       :", nrow(df_phe[complete.cases(df_phe),]),"(with phenotype data)\n")
       # Confirm order of ID matches that of data[[1]]
       if (! all(ID == colnames(data[[1]])[6:length(data[[1]])])){
         stop("Error: Samples in hapdose files doesn't match with the phenotype file", call.=FALSE)
@@ -294,13 +319,17 @@ RunTractor <- function(prefix, phenofile, sampleidcol, phenocol, covarcollist, c
       
       # Create covariate matrix from phenotype file.
       if (tolower(covarcollist) != "none") {
-        COV_ <- as.matrix(df_phe[, ..covars])
+        COV_ = df_phe[, ..covars, drop = F]
+        if(!is.null(catcovarcollist)) {
+          COV_ = COV_[, (catcovars) := lapply(.SD, as.factor), .SDcols = catcovars]
+        }
       } else {
         COV_ = NULL
       }
       rm(sampleID_hapdos)
       rm(excluded_samples)
       rm(covarcollist)
+      rm(catcovarcollist)
     }
     
     nSNP = nrow(data[[1]])
@@ -327,7 +356,7 @@ RunTractor <- function(prefix, phenofile, sampleidcol, phenocol, covarcollist, c
                           
                           if (method == "linear") {
                             if (!is.null(COV_)){
-                              model = lm(y ~ LAG_ + COV_)
+                              model = lm(y ~ LAG_ + ., data = COV_)
                             } else {
                               model = lm(y ~ LAG_)
                             }
@@ -342,7 +371,7 @@ RunTractor <- function(prefix, phenofile, sampleidcol, phenocol, covarcollist, c
                             N      = extracted_info$N
                           } else if (method == "logistic") {
                             if (!is.null(COV_)){
-                              model = glm(y ~ LAG_ + COV_, family = binomial(link = "logit"))
+                              model = glm(y ~ LAG_ + ., data = COV_, family = binomial(link = "logit"))
                             } else {
                               model = glm(y ~ LAG_, family = binomial(link = "logit"))
                             }
@@ -425,6 +454,7 @@ RunTractor(prefix = opt$hapdose,
            sampleidcol = opt$sampleidcol,
            phenocol = opt$phenocol,
            covarcollist = opt$covarcollist,
+           catcovarcollist = opt$catcovarcollist,
            chunksize = opt$chunksize,
            totallines = opt$totallines,
            method = opt$method,

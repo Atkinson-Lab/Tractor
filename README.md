@@ -1,6 +1,6 @@
 ![](images/tractor_icon.png)
 
-## NEW!!! Current Version: v1.4.0 (released May 10, 2024)
+## Current Version: v1.4.0 (released May 10, 2024)
 - Added support for compressed (gz) hapcount/dosage and phenotype files.
 - Improved file reading efficiency by implementing fread in chunks, mitigating memory errors.
 - Implemented parallel processing for regression, resulting in significant speed improvements with multi-core systems.

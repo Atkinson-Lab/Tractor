@@ -7,9 +7,8 @@ Each file in the `genomic_chunks` directory contains at least four columns:
 1. **Column 1: Chunk Index**: A unique identifier for each chunk.
 2. **Column 2: Chromosome/Contig ID**: The identifier for the chromosome or contig to which the chunk belongs.
 3. **Column 3: Chunk Coordinates (with Buffers)**: The genomic coordinates of the chunk, including the left and right buffer regions (flanking regions).
+	* This column is used for phasing, with overlapping buffer regions across contigs allowing `phase_ligate` to assess phasing concordance using the Switch Error Rate (SER). [SHAPEIT5's `ligate` documentation](https://odelaneau.github.io/shapeit5/docs/documentation/ligate/) recomments an SER above 80-90% for optimal results.
 4. **Column 4: Chunk Coordinates (without Buffers)**: The genomic coordinates of the chunk, excluding the buffer regions.
-
-- **Column 3** (Chunk Coordinates with Buffers) is used for phasing, with overlapping buffer regions across contigs allowing `phase_ligate` to assess phasing concordance using the Switch Error Rate (SER). [SHAPEIT5's `ligate` documentation](https://odelaneau.github.io/shapeit5/docs/documentation/ligate/) recomments an SER above 80-90% for optimal results.
 
 ## Resources
 

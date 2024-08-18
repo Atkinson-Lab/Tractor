@@ -1,5 +1,5 @@
 # Excldue MacOS files
 .DS_Store
 resources/.DS_Store
-
+resources/genomic_chunks/.DS_Store
 

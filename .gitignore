@@ -1,1 +1,5 @@
-./.DS_Store
+# Excldue MacOS files
+.DS_Store
+resources/.DS_Store
+
+

@@ -1,25 +1,3 @@
-This directory contains genomic chunks that can be used for phasing by SHAPEIT5
-
-Each file contains at least 4 columns:
-> Column 1: Chunk index
-> Column 2: Chromosome/contig ID
-> Column 3: Chunk coordinates (including left and right buffers i.e. includes flanking regions)
-> COlumn 4: Chunk coordinates excluding buffer regions
-
-* Column 3 is what is used to phase and the buffer regions overlap across sequential contigs for `phase_ligate` to find out phasing concordance within the buffer regions using Switch Error Rate (SER) metric, which SHAPEIT5 team recommends to be above 80 or 90. Please see [SHAPEIT5 documentation](https://odelaneau.github.io/shapeit5/docs/documentation/ligate/)
-
-
-The b38 chunks for 4cM and 20cM have been obtained from [SHAPEIT5's resources on its GitHub](https://github.com/odelaneau/shapeit5/tree/main/resources/chunks/b38)
-
-The b37 chunks were generated using TGP Phase 3 (GRCh37) dataset, which was QC'd for high-quality variants, SNPs, biallelic variants and MAF of 0.05% before generating chunks using GLIMPSE2 to create genomic chunks. See GLIMPSE2's [docuemntaton here](https://odelaneau.github.io/GLIMPSE/docs/documentation/chunk/).
-
-The `chunks_fullchromosome` directory is created if the user wants to to run phasing for whole chromosome at once. It is genomic coordinate-agnostic, and should work for both genome coordinates.
-
-
-Here’s an improved version of your README, organized for clarity and ease of understanding:
-
----
-
 # Genomic Chunks for Phasing with SHAPEIT5
 
 This directory contains genomic chunks that are prepared for use with the phasing tool SHAPEIT5.

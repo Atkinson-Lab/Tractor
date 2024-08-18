@@ -2,7 +2,7 @@
 
 This directory contains genomic chunks that are prepared for use with the phasing tool SHAPEIT5.
 
-Each file in this directory contains at least four columns:
+Each file in the `genomic_chunks` directory contains at least four columns:
 
 1. **Column 1: Chunk Index**: A unique identifier for each chunk.
 2. **Column 2: Chromosome/Contig ID**: The identifier for the chromosome or contig to which the chunk belongs.

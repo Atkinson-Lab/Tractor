@@ -231,7 +231,6 @@ RunTractor <- function(prefix, phenofile, sampleidcol, phenocol, covarcollist, c
   COV_      = NULL
   
   iters          <- 1
-  skip_val       <- 1
   max_iters      <- ceiling(totallines/chunksize)
   data_colnames  <- NULL
   
@@ -251,16 +250,30 @@ RunTractor <- function(prefix, phenofile, sampleidcol, phenocol, covarcollist, c
   dopar_packages <- c("data.table","dplyr")
   dopar_functions <- c("subset_mat_NA","extract_model_info")
   
+  inPipes = lapply(inFiles, function(file) {
+    if (!endsWith(file,".gz")) {
+      con <- pipe(sprintf("cat %s", shQuote(file)), open="r")
+      on.exit(try(close(con), silent=TRUE))
+      return(con)
+    } else {
+      con <- pipe(sprintf("gzip -cd %s", shQuote(file)), open="r")
+      on.exit(try(close(con), silent=TRUE))
+      return(con)
+    }
+  })
+
   while (iters <= max_iters) {
     
     if (iters != 1) {
-      data = lapply(inFiles,function(file) {
-        data.table::fread(file, nrows=chunksize, skip=skip_val,
+      data = lapply(inPipes,function(file) {
+        lins <- readLines(file, n=chunksize)
+        data.table::fread(text=lins, nrows=chunksize,
                           col.names=data_colnames, sep="\t") #, header=TRUE
       })
     } else {
-      data = lapply(inFiles,function(file) {
-        data.table::fread(file, nrows=chunksize, skip=skip_val-1,
+      data = lapply(inPipes,function(file) {
+        lins <- readLines(file, n=chunksize)
+        data.table::fread(text=lins, nrows=chunksize,
                           sep="\t", header=TRUE)
       })
       data_colnames <- colnames(data[[1]])
@@ -416,7 +429,6 @@ RunTractor <- function(prefix, phenofile, sampleidcol, phenocol, covarcollist, c
     
     # Updating looping variables
     iters    = iters + 1
-    skip_val = skip_val + chunksize
   }
 }
 

@@ -253,11 +253,9 @@ RunTractor <- function(prefix, phenofile, sampleidcol, phenocol, covarcollist, c
   inPipes = lapply(inFiles, function(file) {
     if (!endsWith(file,".gz")) {
       con <- pipe(sprintf("cat %s", shQuote(file)), open="r")
-      on.exit(try(close(con), silent=TRUE))
       return(con)
     } else {
       con <- pipe(sprintf("gzip -cd %s", shQuote(file)), open="r")
-      on.exit(try(close(con), silent=TRUE))
       return(con)
     }
   })
@@ -430,7 +428,12 @@ RunTractor <- function(prefix, phenofile, sampleidcol, phenocol, covarcollist, c
     # Updating looping variables
     iters    = iters + 1
   }
+
+  lapply(inPipes, function(pipe) {
+    try(close(pipe), silent=TRUE)
+  })
 }
+
 
 RunTractor(prefix = opt$hapdose,
            phenofile = opt$phenofile,

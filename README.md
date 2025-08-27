@@ -8,13 +8,13 @@
    - Users can specify sample ID column (`--sampleidcol`), phenotype ID column (`--phenocol`), and covariate column list (`--covarcollist`)
 - Updated output summary statistics to include SE and t-val, with column names adjusted to adhere to GWAS standards.
 
-# TRACTOR - Local Ancestry Aware GWAS
+# Tractor - Local Ancestry Aware GWAS
 
 Tractor is a specialized tool designed to enhance Genome-Wide Association Studies (GWAS) for diverse cohorts by addressing challenges associated with analyzing admixed populations. Admixed populations are often excluded from genomic studies due to concerns about how to properly account for their complex ancestry.
 
 Tractor facilitates the inclusion of admixed individuals in association studies by leveraging local ancestry, allowing for finer resolution in controlling for ancestry in GWAS, and empowering identification of ancestry-specific loci.
 
-## Classic GWAS vs. TRACTOR GWAS
+## Classic GWAS vs. Tractor GWAS
 Unlike traditional GWAS methods, Tractor requires local ancestry estimates in its analyses. It employs a multi-step approach involving phasing, local ancestry inference, and regression analysis with ancestral allele dosages. This method aims to improve the accuracy of association analyses in cohorts with diverse ancestries, overcoming issues such as population stratification and variable linkage disequilibrium patterns.
 
 

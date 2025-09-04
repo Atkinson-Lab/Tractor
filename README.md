@@ -44,7 +44,7 @@ conda activate py3_tractor
 
 #### IMPORTANT: Ensure your genotype data is phased (VCF file) and local ancestry is inferred for the following steps. Refer to our [Tractor tutorial](https://atkinson-lab.github.io/Tractor-tutorial/) for initial setup instructions.
 
-All scripts desribed in the following steps are available in the [`scripts`](https://github.com/Atkinson-Lab/Tractor-New/tree/main/scripts) directory, and Hail implementation is present in the [`ipynbs`](https://github.com/Atkinson-Lab/Tractor-New/tree/main/ipynbs) directory
+All scripts desribed in the following steps are available in the [`scripts`](https://github.com/Atkinson-Lab/Tractor/tree/master/scripts) directory, and Hail implementation is present in the [`ipynbs`](https://github.com/Atkinson-Lab/Tractor/tree/master/ipynbs) directory
 
 ### Step 0 [Optional]: Recovering Haplotypes Disrupted by Statistical Phasing
 
@@ -262,7 +262,7 @@ LAeff_anc0      Effect size for the local ancestry term (X1 term in Tractor)
 [Contents](#contents)
 
 ## Steps for Running Tractor on Hail
-- Hail implementation of the pipeline is described in [`hail_example_tractor_gwas.ipynb`](https://github.com/Atkinson-Lab/Tractor-New/blob/main/ipynbs/hail_example_tractor_gwas.ipynb).
+- Hail implementation of the pipeline is described in [`hail_example_tractor_gwas.ipynb`](https://github.com/Atkinson-Lab/Tractor/blob/master/ipynbs/hail_example_tractor_gwas.ipynb).
 
 ## License
 The Tractor program is licensed under the MIT License. You may obtain a copy of the License [here](https://github.com/Atkinson-Lab/Tractor-New/blob/main/LICENSE).

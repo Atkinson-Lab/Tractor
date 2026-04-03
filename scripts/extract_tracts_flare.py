@@ -234,7 +234,7 @@ def extract_tracts_flare(
                     dosage_output_line = "\t".join(output_lines[f"dos{j}"])
                     ancdos_output_line = "\t".join(output_lines[f"ancdos{j}"])
                     files[f"dos{j}"].write(f"{dosage_output_line}\n")
-                    files[f"ancdos{j}"].write(f"{ancdos_output_line}")
+                    files[f"ancdos{j}"].write(f"{ancdos_output_line}\n")
                     if output_vcf:
                         vcf_output_lines = "\t".join(output_lines[f"vcf{j}"])
                         files[f"vcf{j}"].write(f"{vcf_output_lines}\n")
